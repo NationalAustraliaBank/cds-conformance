@@ -1,0 +1,12 @@
+sudo: false
+language: java
+jdk:
+  - openjdk8
+
+cache:
+  directories:
+    - $HOME/.m2
+    
+after_success:
+  - test $TRAVIS_BRANCH == "master" && test $TRAVIS_PULL_REQUEST == "false" && mvn deploy --settings .travis/snapshot-dispatch-settings.xml
+
