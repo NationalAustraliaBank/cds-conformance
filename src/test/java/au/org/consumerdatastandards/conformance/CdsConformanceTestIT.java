@@ -27,9 +27,9 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CdsConformanceTest {
+public class CdsConformanceTestIT {
 
-    private final static Logger LOGGER = LogManager.getLogger(CdsConformanceTest.class);
+    private final static Logger LOGGER = LogManager.getLogger(CdsConformanceTestIT.class);
 
     private final static String serverUrl = "http://localhost:8080/cds-au/v1";
 
@@ -50,7 +50,7 @@ public class CdsConformanceTest {
         List<String> includedSectionList = new ArrayList<>();
         List<String> excludedSectionList = new ArrayList<>();
         Properties props = new Properties();
-        InputStream is = CdsConformanceTest.class.getResourceAsStream("/conformance.properties");
+        InputStream is = CdsConformanceTestIT.class.getResourceAsStream("/conformance.properties");
 
         try {
             props.load(is);
