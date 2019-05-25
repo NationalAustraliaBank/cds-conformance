@@ -6,7 +6,7 @@
     <artifactId>cds-conformance</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>cds-conformance</name>
+    <name>CDS Conformance Suite</name>
     <url>https://github.com/ConsumerDataStandardsAustralia/cds-conformance</url>
     <description>CDS Conformance</description>
     <scm>
