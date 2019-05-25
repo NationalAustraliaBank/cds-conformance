@@ -50,7 +50,7 @@ public class PayloadValidator {
             for (File oneFile : files) {
                 validate(oneFile.getAbsolutePath());
             }
-        } else {
+        } else if (file.getName().toLowerCase().endsWith(".json")) {
             if (!validate(file)) {
                 System.out.println("No matching model found");
             }
