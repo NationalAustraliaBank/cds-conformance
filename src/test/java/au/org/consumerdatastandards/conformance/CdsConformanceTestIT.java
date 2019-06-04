@@ -81,10 +81,12 @@ public class CdsConformanceTestIT {
 
     @Test
     public void positiveCases() throws ApiException {
+        
+        PayloadValidator payloadValidator = new PayloadValidator();
 
         ResponseBankingProductList allProducts = api.listProducts(ParamEffective.ALL, null, null, null, null, null);
         assertAll("Proper responses",
-            () -> checkAgainstModel(allProducts, conformanceModel.getResponse("listProducts", ResponseCode.OK).content()),
+            () -> payloadValidator.checkAgainstModel(allProducts, conformanceModel.getResponse("listProducts", ResponseCode.OK).content()),
             () -> {
                 if (!allProducts.getData().getProducts().isEmpty()) {
                     checkProductListData(allProducts.getData());
@@ -94,45 +96,12 @@ public class CdsConformanceTestIT {
     }
 
     private void checkProductListData(ResponseBankingProductListData data) throws ApiException, IllegalAccessException {
+        PayloadValidator payloadValidator = new PayloadValidator();
+
         for (BankingProduct product : data.getProducts()) {
             ResponseBankingProductById productDetail = api.getProductDetail(product.getProductId());
-            checkAgainstModel(productDetail, conformanceModel.getResponse("getProductDetail", ResponseCode.OK).content());
+            payloadValidator.checkAgainstModel(productDetail, conformanceModel.getResponse("getProductDetail", ResponseCode.OK).content());
         }
     }
 
-    private void checkAgainstModel(Object data, Class<?> model) throws IllegalAccessException {
-        LOGGER.info("Checking {} against {}", data, model);
-        List<Field> properties = ConformanceUtil.getAllProperties(model);
-        for (Field modelField : properties) {
-            Field dataField = FieldUtils.getField(data.getClass(), modelField.getName(), true);
-            assertNotNull(dataField, model.getSimpleName() + "." + modelField.getName() + " is missing from data " + data);
-            dataField.setAccessible(true);
-            Object dataFieldValue = dataField.get(data);
-            if (modelField.getAnnotation(Property.class).required()) {
-                assertNotNull(dataFieldValue, model.getSimpleName() + "." + modelField.getName() + " is required");
-            }
-            Class<?> modelFieldType = modelField.getType();
-            if (modelFieldType.isArray()) {
-                if (modelFieldType.getComponentType().isAnnotationPresent(DataDefinition.class)
-                    && dataFieldValue != null
-                    && Array.getLength(dataFieldValue) > 0) {
-                    Object[] values = ConformanceUtil.unpack(dataFieldValue);
-                    for (Object value : values) {
-                        checkAgainstModel(value, modelFieldType.getComponentType());
-                    }
-                }
-            } else if (ReflectionUtil.isSetOrList(modelFieldType)) {
-                Class<?> itemType = ReflectionUtil.getItemType(modelFieldType, modelField.getGenericType());
-                if (itemType.isAnnotationPresent(DataDefinition.class)
-                    && dataFieldValue != null && !((Collection) dataFieldValue).isEmpty()) {
-                    for (Object value : (Collection) dataFieldValue) {
-                        checkAgainstModel(value, itemType);
-                    }
-                }
-
-            } else if (dataFieldValue != null && modelFieldType.isAnnotationPresent(DataDefinition.class)) {
-                checkAgainstModel(dataFieldValue, modelFieldType);
-            }
-        }
-    }
 }
