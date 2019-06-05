@@ -51,6 +51,10 @@
     </distributionManagement>
     <dependencies>
         <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>3.2.8</version>
+        </dependency>        <dependency>
             <groupId>au.org.consumerdatastandards</groupId>
             <artifactId>cds-codegen-core</artifactId>
             <version>${cds-codegen-core.version}</version>

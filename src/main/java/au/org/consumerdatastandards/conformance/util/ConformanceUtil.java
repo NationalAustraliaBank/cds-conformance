@@ -5,8 +5,8 @@ import au.org.consumerdatastandards.conformance.ConformanceError;
 import au.org.consumerdatastandards.conformance.ConformanceErrorType;
 import au.org.consumerdatastandards.support.data.DataDefinition;
 import au.org.consumerdatastandards.support.data.Property;
+import net.sf.cglib.beans.BeanGenerator;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.springframework.cglib.beans.BeanGenerator;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

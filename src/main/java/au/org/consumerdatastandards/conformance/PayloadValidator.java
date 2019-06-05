@@ -12,8 +12,8 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +24,9 @@ import java.util.List;
 
 public class PayloadValidator {
 
-    private ConformanceModel conformanceModel;
-    private final static Logger LOGGER = LogManager.getLogger(PayloadValidator.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(PayloadValidator.class);
 
+    private ConformanceModel conformanceModel;
 
     public PayloadValidator() {
         ModelBuilder modelBuilder = new ModelBuilder(new Options());
@@ -39,20 +39,20 @@ public class PayloadValidator {
     }
 
     public boolean validateFile(File jsonFile) {
-        System.out.println("\nValidating " + jsonFile.getAbsolutePath());
+        LOGGER.info("Validating " + jsonFile.getAbsolutePath());
         byte[] jsonData;
         try {
             jsonData = Files.readAllBytes(Paths.get(jsonFile.getCanonicalPath()));
             return validatePayload(jsonData);
         } catch (IOException e) {
-            System.out.println("Failed to load file " + jsonFile.getAbsolutePath());
+            LOGGER.error("Failed to load file " + jsonFile.getAbsolutePath());
             return false;
         }
     }
 
     public boolean validatePayload(String json) {
         if (StringUtils.isBlank(json)) {
-            System.out.println("Blank json text... Ignored.");
+            LOGGER.info("Blank json text... Ignored.");
             return false;
         }
         return validatePayload(json.getBytes());
@@ -71,12 +71,12 @@ public class PayloadValidator {
                 List<ConformanceError> errors = new ArrayList<>();
                 ConformanceUtil.checkAgainstModel(data, modelClass, errors);
                 if (errors.isEmpty()) {
-                    System.out.println(payload.getDescription());
+                    LOGGER.info(payload.getDescription());
                 } else {
-                    System.out.println("Errors found:");
-                    errors.forEach(conformanceError -> System.out.println(conformanceError.getDescription()));
+                    LOGGER.info("Errors found:");
+                    errors.forEach(conformanceError -> LOGGER.info(conformanceError.getDescription()));
                 }
-                System.out.println("Found matching model " + modelClass.getSimpleName());
+                LOGGER.info("Found matching model " + modelClass.getSimpleName());
                 return true;
             } catch (IOException e) {
                 // ignored

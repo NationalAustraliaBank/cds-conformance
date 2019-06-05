@@ -9,11 +9,15 @@ import au.org.consumerdatastandards.codegen.generator.Options;
 import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
 import au.org.consumerdatastandards.conformance.util.ModelConformanceConverter;
 import au.org.consumerdatastandards.support.ResponseCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class APIValidator {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(APIValidator.class);
 
     private BankingProductsAPI bankingProductsAPI;
 
@@ -47,7 +51,7 @@ public class APIValidator {
                 validateProductListData(product);
             }
         } catch (ApiException e) {
-            System.out.println("API error: " + e.getMessage());
+            LOGGER.error("API error: " + e.getMessage(), e);
         }
     }
 
@@ -58,7 +62,7 @@ public class APIValidator {
             List<ConformanceError> errors = new ArrayList<>();
             ConformanceUtil.checkAgainstModel(productDetail, responseModel, errors);
         } catch (ApiException e) {
-            System.out.println("API error: " + e.getMessage());
+            LOGGER.error("API error: " + e.getMessage(), e);
         }
     }
 }
