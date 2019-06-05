@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,13 +48,27 @@ public class PayloadValidator {
         }
     }
 
-    public boolean validateFile(File jsonFile) throws IOException {
+    public boolean validateFile(File jsonFile) {
         System.out.println("\nValidating " + jsonFile.getAbsolutePath());
-        byte[] jsonData = Files.readAllBytes(Paths.get(jsonFile.getCanonicalPath()));
-        return validatePayload(jsonData);
+        byte[] jsonData;
+        try {
+            jsonData = Files.readAllBytes(Paths.get(jsonFile.getCanonicalPath()));
+            return validatePayload(jsonData);
+        } catch (IOException e) {
+            System.out.println("Failed to load file " + jsonFile.getAbsolutePath());
+            return false;
+        }
     }
 
-    public boolean validatePayload(byte[] jsonData) throws IOException {
+    public boolean validatePayload(String json) {
+        if (StringUtils.isBlank(json)) {
+            System.out.println("Blank json text... Ignored.");
+            return false;
+        }
+        return validatePayload(json.getBytes());
+    }
+
+    private boolean validatePayload(byte[] jsonData) {
         for (Class<?> modelClass : conformanceModel.getPayloadModels()) {
             try {
                 ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParameterNamesModule())
@@ -73,7 +88,7 @@ public class PayloadValidator {
                 }
                 System.out.println("Found matching model " + modelClass.getSimpleName());
                 return true;
-            } catch (JsonMappingException e) {
+            } catch (IOException e) {
                 // ignored
             }
         }
