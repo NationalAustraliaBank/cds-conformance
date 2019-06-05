@@ -6,7 +6,7 @@
 
     <groupId>au.org.consumerdatastandards</groupId>
     <artifactId>cds-conformance</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.9.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>cds-conformance</name>
     <url>https://github.com/ConsumerDataStandardsAustralia/cds-conformance</url>
@@ -33,10 +33,9 @@
     </developers>
     <properties>
         <java.version>1.8</java.version>
-        <spring-shell.version>2.0.1.RELEASE</spring-shell.version>
         <cds-client-java.version>0.0.2-SNAPSHOT</cds-client-java.version>
         <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
-        <junit-jupiter.version>5.4.0</junit-jupiter.version>
+        <jackson.version>2.9.8</jackson.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
@@ -50,31 +49,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.1.4.RELEASE</version>
-    </parent>
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.shell</groupId>
-            <artifactId>spring-shell-core</artifactId>
-            <version>${spring-shell.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.shell</groupId>
-            <artifactId>spring-shell-starter</artifactId>
-            <version>${spring-shell.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit-jupiter.version}</version>
-        </dependency>
         <dependency>
             <groupId>au.org.consumerdatastandards</groupId>
             <artifactId>cds-codegen-core</artifactId>
@@ -98,14 +73,17 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
     <build>
