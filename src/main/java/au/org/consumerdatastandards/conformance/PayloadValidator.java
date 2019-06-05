@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class PayloadValidator {
@@ -38,27 +40,28 @@ public class PayloadValidator {
         }
     }
 
-    public boolean validateFile(File jsonFile) {
+    public List<ConformanceError> validateFile(File jsonFile) {
         LOGGER.info("Validating " + jsonFile.getAbsolutePath());
         byte[] jsonData;
         try {
             jsonData = Files.readAllBytes(Paths.get(jsonFile.getCanonicalPath()));
             return validatePayload(jsonData);
         } catch (IOException e) {
-            LOGGER.error("Failed to load file " + jsonFile.getAbsolutePath());
-            return false;
+            return Collections.singletonList(new ConformanceError().errorMessage(
+                "Failed to load file " + jsonFile.getAbsolutePath()
+            ));
         }
     }
 
-    public boolean validatePayload(String json) {
+    public List<ConformanceError> validatePayload(String json) {
         if (StringUtils.isBlank(json)) {
-            LOGGER.info("Blank json text... Ignored.");
-            return false;
+            return Collections.singletonList(
+                new ConformanceError().errorMessage("Blank json text... Ignored."));
         }
         return validatePayload(json.getBytes());
     }
 
-    private boolean validatePayload(byte[] jsonData) {
+    private List<ConformanceError> validatePayload(byte[] jsonData) {
         for (Class<?> modelClass : conformanceModel.getPayloadModels()) {
             try {
                 ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParameterNamesModule())
@@ -70,18 +73,14 @@ public class PayloadValidator {
                 Object data = objectMapper.readValue(jsonData, payload.getDataClass());
                 List<ConformanceError> errors = new ArrayList<>();
                 ConformanceUtil.checkAgainstModel(data, modelClass, errors);
-                if (errors.isEmpty()) {
-                    LOGGER.info(payload.getDescription());
-                } else {
-                    LOGGER.info("Errors found:");
-                    errors.forEach(conformanceError -> LOGGER.info(conformanceError.getDescription()));
-                }
                 LOGGER.info("Found matching model " + modelClass.getSimpleName());
-                return true;
+                return errors;
             } catch (IOException e) {
                 // ignored
             }
         }
-        return false;
+        return Arrays.asList(new ConformanceError()
+            .errorType(ConformanceErrorType.NO_MATCHING)
+            .errorMessage("No matching model found"));
     }
 }

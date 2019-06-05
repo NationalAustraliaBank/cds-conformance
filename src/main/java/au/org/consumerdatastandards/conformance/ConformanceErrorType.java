@@ -3,5 +3,6 @@ package au.org.consumerdatastandards.conformance;
 public enum ConformanceErrorType {
 
     MISSING_PROPERTY,
-    MISSING_VALUE
+    MISSING_VALUE,
+    NO_MATCHING
 }
