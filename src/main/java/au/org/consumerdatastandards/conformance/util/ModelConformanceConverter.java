@@ -31,16 +31,7 @@ public class ModelConformanceConverter {
         }
         conformanceModel.setResponseMap(responseMap);
         conformanceModel.setPayloadMap(payloadMap);
-        conformanceModel.setNameClassMap(mapClassByName(payloadMap.keySet()));
         return conformanceModel;
-    }
-
-    private static TreeMap<String, Class<?>> mapClassByName(Set<Class<?>> classes) {
-        TreeMap<String, Class<?>> classMap = new TreeMap<>();
-        for (Class<?> clazz: classes) {
-            classMap.put(clazz.getSimpleName(), clazz);
-        }
-        return classMap;
     }
 
     private static void add(EndpointModel endpointModel,
