@@ -1,5 +1,7 @@
 package au.org.consumerdatastandards.conformance;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.lang.reflect.Field;
 
 public class ConformanceError {
@@ -11,6 +13,8 @@ public class ConformanceError {
     private ConformanceErrorType errorType;
 
     private Field errorField;
+
+    private String message;
 
     public ConformanceError modelClass(Class<?> modelClass) {
         this.modelClass = modelClass;
@@ -32,6 +36,11 @@ public class ConformanceError {
         return this;
     }
 
+    public ConformanceError errorMessage(String message) {
+        this.message = message;
+        return this;
+    }
+
     public String getDescription() {
         switch (errorType) {
             case MISSING_VALUE:
@@ -39,7 +48,8 @@ public class ConformanceError {
             case MISSING_PROPERTY:
                 return String.format("Required field '%s' is missing in %s", errorField.getName(), dataObject);
             default:
-                return "Unknown error";
+                if (StringUtils.isBlank(message)) return message;
+                else return "Unknown error";
         }
     }
 }

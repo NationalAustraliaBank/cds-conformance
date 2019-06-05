@@ -35,7 +35,7 @@
         <java.version>1.8</java.version>
         <spring-shell.version>2.0.1.RELEASE</spring-shell.version>
         <cds-client-java.version>0.0.2-SNAPSHOT</cds-client-java.version>
-        <cds-codegen-core.version>0.0.4-SNAPSHOT</cds-codegen-core.version>
+        <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>

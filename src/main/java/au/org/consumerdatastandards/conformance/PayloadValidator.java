@@ -1,6 +1,23 @@
 package au.org.consumerdatastandards.conformance;
 
-import static org.junit.jupiter.api.Assertions.*;
+import au.org.consumerdatastandards.codegen.ModelBuilder;
+import au.org.consumerdatastandards.codegen.generator.Options;
+import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
+import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
+import au.org.consumerdatastandards.conformance.util.ModelConformanceConverter;
+import au.org.consumerdatastandards.support.data.DataDefinition;
+import au.org.consumerdatastandards.support.data.Property;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,31 +29,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-
-import au.org.consumerdatastandards.codegen.ModelBuilder;
-import au.org.consumerdatastandards.codegen.generator.Options;
-import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
-import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
-import au.org.consumerdatastandards.conformance.util.ModelConformanceConverter;
-import au.org.consumerdatastandards.support.ResponseCode;
-import au.org.consumerdatastandards.support.data.DataDefinition;
-import au.org.consumerdatastandards.support.data.Property;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PayloadValidator {
 
-    private static ConformanceModel conformanceModel;
+    private ConformanceModel conformanceModel;
     private final static Logger LOGGER = LogManager.getLogger(PayloadValidator.class);
 
 
@@ -54,10 +51,6 @@ public class PayloadValidator {
         System.out.println("\nValidating " + jsonFile.getAbsolutePath());
         byte[] jsonData = Files.readAllBytes(Paths.get(jsonFile.getCanonicalPath()));
         return validatePayload(jsonData);
-    }
-
-    public boolean validatePayload(String jsonData) throws IOException {
-        return validatePayload(jsonData.getBytes());
     }
 
     public boolean validatePayload(byte[] jsonData) throws IOException {
@@ -87,11 +80,6 @@ public class PayloadValidator {
         return false;
     }
     
-    public void validatePayloadFromResponse(Object inputResponse, String operationId, ResponseCode responseCode) throws IllegalAccessException {
-        checkAgainstModel(inputResponse, conformanceModel.getResponse(operationId, responseCode).content());
-    }
-    
-
     public void checkAgainstModel(Object data, Class<?> model) throws IllegalAccessException {
         LOGGER.info("Checking {} against {}", data, model);
         List<Field> properties = ConformanceUtil.getAllProperties(model);
