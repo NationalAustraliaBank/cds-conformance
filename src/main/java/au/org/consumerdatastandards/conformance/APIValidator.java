@@ -38,6 +38,8 @@ public class APIValidator {
     public void validateAPI(String apiName) {
         if ("BankingProducts".equals(apiName)) {
             validateBankingProductsAPI();
+        } else {
+            LOGGER.error("Unknown API: " + apiName);
         }
     }
 
