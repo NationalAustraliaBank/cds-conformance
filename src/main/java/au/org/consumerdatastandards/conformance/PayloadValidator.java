@@ -4,6 +4,8 @@ import au.org.consumerdatastandards.codegen.ModelBuilder;
 import au.org.consumerdatastandards.codegen.generator.Options;
 import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
 import au.org.consumerdatastandards.conformance.util.ModelConformanceConverter;
+import au.org.consumerdatastandards.support.EndpointResponse;
+import au.org.consumerdatastandards.support.ResponseCode;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +22,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,11 +34,6 @@ public class PayloadValidator {
     public PayloadValidator() {
         ModelBuilder modelBuilder = new ModelBuilder(new Options());
         conformanceModel = ModelConformanceConverter.convert(modelBuilder.build());
-        for (Class<?> clazz : conformanceModel.getPayloadModels()) {
-            if (conformanceModel.getPlayload(clazz).getDataClass() == null) {
-                System.out.println(clazz.getSimpleName());
-            }
-        }
     }
 
     public List<ConformanceError> validateFile(File jsonFile) {
@@ -79,8 +75,20 @@ public class PayloadValidator {
                 // ignored
             }
         }
-        return Arrays.asList(new ConformanceError()
+        return Collections.singletonList(new ConformanceError()
             .errorType(ConformanceErrorType.NO_MATCHING_MODEL)
             .errorMessage("No matching model found"));
+    }
+
+    public List<ConformanceError> validateResponse(Object response, String operationId, ResponseCode responseCode) {
+        List<ConformanceError> errors = new ArrayList<>();
+        EndpointResponse endpointResponse = conformanceModel.getResponse(operationId, responseCode);
+        if (endpointResponse == null) {
+            return Collections.singletonList(new ConformanceError().errorMessage(
+                String.format("No response model found for operation %s with response code %s", operationId, responseCode)));
+        }
+        Class<?> responseModel = endpointResponse.content();
+        ConformanceUtil.checkAgainstModel(response, responseModel, errors);
+        return errors;
     }
 }
