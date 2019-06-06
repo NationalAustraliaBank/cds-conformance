@@ -4,5 +4,6 @@ public enum ConformanceErrorType {
 
     MISSING_PROPERTY,
     MISSING_VALUE,
-    NO_MATCHING
+    NO_MATCHING,
+    ONE_OF_CONSTRAINT
 }

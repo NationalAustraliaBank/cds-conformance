@@ -11,7 +11,9 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class ConformanceUtil {
@@ -19,6 +21,17 @@ public class ConformanceUtil {
     public static final String GENERATED_CLASS_SUFFIX = "$ByCDS";
 
     public static void checkAgainstModel(Object data, Class<?> model, List<ConformanceError> errors) {
+        String[] oneOfProperties = getOneOfProperties(model);
+        if (oneOfProperties != null && oneOfProperties.length > 1) {
+            Map<String, Object> propertyValues = getPropertyValues(data, oneOfProperties);
+            if (propertyValues.size() != 1) {
+                errors.add(new ConformanceError()
+                    .errorType(ConformanceErrorType.ONE_OF_CONSTRAINT)
+                    .dataObject(data)
+                    .errorMessage(buildOneOfErrorMessage(data, oneOfProperties, propertyValues))
+                );
+            }
+        }
         List<Field> properties = getAllProperties(model);
         for (Field modelField : properties) {
             Object dataFieldValue = getDataFieldValue(data, modelField);
@@ -60,7 +73,28 @@ public class ConformanceUtil {
         }
     }
 
-    public static List<Field> getAllProperties(Class<?> model) {
+    private static String buildOneOfErrorMessage(Object data, String[] oneOfProperties, Map<String, Object> values) {
+        StringBuilder sb = new StringBuilder("One of the [");
+        for (int i = 0; i < oneOfProperties.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(oneOfProperties[i]);
+        }
+        sb.append("] properties should have value, but ").append(values.size()).append(" properties ");
+        if (!values.isEmpty()) {
+            sb.append("[");
+            int count = 0;
+            for (String property : values.keySet()) {
+                if (count > 0) sb.append(", ");
+                sb.append(property);
+                count++;
+            }
+            sb.append("] ");
+        }
+        sb.append("have values");
+        return sb.toString();
+    }
+
+    private static List<Field> getAllProperties(Class<?> model) {
         List<Field> properties = FieldUtils.getFieldsListWithAnnotation(model, Property.class);
         DataDefinition dataDefinition = model.getAnnotation(DataDefinition.class);
         if (dataDefinition != null && dataDefinition.allOf().length > 0) {
@@ -71,8 +105,31 @@ public class ConformanceUtil {
         return properties;
     }
 
+    private static String[] getOneOfProperties(Class<?> model) {
+        DataDefinition dataDefinition = model.getAnnotation(DataDefinition.class);
+        if (dataDefinition != null) {
+            return dataDefinition.oneOf();
+        }
+        return null;
+    }
+
+    private static Map<String, Object> getPropertyValues(Object data, String[] properties) {
+        Map<String, Object> values = new HashMap<>();
+        for (String property : properties) {
+            Object value = getDataFieldValue(data, property);
+            if (value != null) {
+                values.put(property, value);
+            }
+        }
+        return values;
+    }
+
     private static Object getDataFieldValue(Object data, Field modelField) {
         String fieldName = modelField.getName();
+        return getDataFieldValue(data, fieldName);
+    }
+
+    private static Object getDataFieldValue(Object data, String fieldName) {
         if (isGeneratedClass(data.getClass())) {
             fieldName = "$cglib_prop_" + fieldName;
         }
