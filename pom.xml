@@ -33,7 +33,7 @@
     </developers>
     <properties>
         <java.version>1.8</java.version>
-        <cds-client-java.version>0.0.2-SNAPSHOT</cds-client-java.version>
+        <cds-client-java.version>0.9.3-SNAPSHOT</cds-client-java.version>
         <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
         <jackson.version>2.9.8</jackson.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -54,7 +54,8 @@
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
             <version>3.2.8</version>
-        </dependency>        <dependency>
+        </dependency>
+        <dependency>
             <groupId>au.org.consumerdatastandards</groupId>
             <artifactId>cds-codegen-core</artifactId>
             <version>${cds-codegen-core.version}</version>
