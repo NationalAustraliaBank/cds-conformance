@@ -80,7 +80,7 @@ public class PayloadValidator {
             }
         }
         return Arrays.asList(new ConformanceError()
-            .errorType(ConformanceErrorType.NO_MATCHING)
+            .errorType(ConformanceErrorType.NO_MATCHING_MODEL)
             .errorMessage("No matching model found"));
     }
 }

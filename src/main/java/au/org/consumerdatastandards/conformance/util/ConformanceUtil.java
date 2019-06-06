@@ -3,6 +3,8 @@ package au.org.consumerdatastandards.conformance.util;
 import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.ConformanceError;
 import au.org.consumerdatastandards.conformance.ConformanceErrorType;
+import au.org.consumerdatastandards.support.data.CDSDataType;
+import au.org.consumerdatastandards.support.data.CustomDataType;
 import au.org.consumerdatastandards.support.data.DataDefinition;
 import au.org.consumerdatastandards.support.data.Property;
 import net.sf.cglib.beans.BeanGenerator;
@@ -10,6 +12,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,14 +24,14 @@ public class ConformanceUtil {
     public static final String GENERATED_CLASS_SUFFIX = "$ByCDS";
 
     public static void checkAgainstModel(Object data, Class<?> model, List<ConformanceError> errors) {
-        String[] oneOfProperties = getOneOfProperties(model);
-        if (oneOfProperties != null && oneOfProperties.length > 1) {
-            Map<String, Object> propertyValues = getPropertyValues(data, oneOfProperties);
-            if (propertyValues.size() != 1) {
+        String[] anyOfProperties = getAnyOfProperties(model);
+        if (anyOfProperties != null && anyOfProperties.length > 1) {
+            Map<String, Object> propertyValues = getPropertyValues(data, anyOfProperties);
+            if (propertyValues.isEmpty()) {
                 errors.add(new ConformanceError()
-                    .errorType(ConformanceErrorType.ONE_OF_CONSTRAINT)
+                    .errorType(ConformanceErrorType.BROKEN_CONSTRAINT)
                     .dataObject(data)
-                    .errorMessage(buildOneOfErrorMessage(data, oneOfProperties, propertyValues))
+                    .errorMessage(buildAnyOfErrorMessage(data, anyOfProperties, propertyValues))
                 );
             }
         }
@@ -40,6 +43,34 @@ public class ConformanceUtil {
                     .errorType(ConformanceErrorType.MISSING_VALUE)
                     .dataObject(data).modelClass(model)
                     .errorField(modelField));
+            } else if (dataFieldValue != null && modelField.isAnnotationPresent(CDSDataType.class)) {
+                CDSDataType cdsDataType = modelField.getAnnotation(CDSDataType.class);
+                CustomDataType customDataType = cdsDataType.value();
+                if (customDataType.getPattern() != null) {
+                    if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
+                        errors.add(new ConformanceError()
+                            .errorType(ConformanceErrorType.PATTERN_NOT_MATCHED)
+                            .dataObject(data).modelClass(model)
+                            .errorField(modelField)
+                        );
+                    }
+                }
+                Number min = customDataType.getMin();
+                if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
+                    errors.add(new ConformanceError()
+                        .errorType(ConformanceErrorType.NUMBER_TOO_SMALL)
+                        .dataObject(data).modelClass(model)
+                        .errorField(modelField)
+                    );
+                }
+                Number max = customDataType.getMax();
+                if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
+                    errors.add(new ConformanceError()
+                        .errorType(ConformanceErrorType.NUMBER_TOO_BIG)
+                        .dataObject(data).modelClass(model)
+                        .errorField(modelField)
+                    );
+                }
             }
             Class<?> modelFieldType = modelField.getType();
             if (modelFieldType.isArray()) {
@@ -73,24 +104,13 @@ public class ConformanceUtil {
         }
     }
 
-    private static String buildOneOfErrorMessage(Object data, String[] oneOfProperties, Map<String, Object> values) {
-        StringBuilder sb = new StringBuilder("One of the [");
-        for (int i = 0; i < oneOfProperties.length; i++) {
+    private static String buildAnyOfErrorMessage(Object data, String[] anyOfProperties, Map<String, Object> values) {
+        StringBuilder sb = new StringBuilder("At least one of the [");
+        for (int i = 0; i < anyOfProperties.length; i++) {
             if (i > 0) sb.append(", ");
-            sb.append(oneOfProperties[i]);
+            sb.append(anyOfProperties[i]);
         }
-        sb.append("] properties should have value, but ").append(values.size()).append(" properties ");
-        if (!values.isEmpty()) {
-            sb.append("[");
-            int count = 0;
-            for (String property : values.keySet()) {
-                if (count > 0) sb.append(", ");
-                sb.append(property);
-                count++;
-            }
-            sb.append("] ");
-        }
-        sb.append("have values");
+        sb.append("] properties should have value, but none of them have values");
         return sb.toString();
     }
 
@@ -105,10 +125,10 @@ public class ConformanceUtil {
         return properties;
     }
 
-    private static String[] getOneOfProperties(Class<?> model) {
+    private static String[] getAnyOfProperties(Class<?> model) {
         DataDefinition dataDefinition = model.getAnnotation(DataDefinition.class);
         if (dataDefinition != null) {
-            return dataDefinition.oneOf();
+            return dataDefinition.anyOf();
         }
         return null;
     }
