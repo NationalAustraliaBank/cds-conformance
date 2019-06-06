@@ -2,7 +2,6 @@ package au.org.consumerdatastandards.conformance.util;
 
 import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.ConformanceError;
-import au.org.consumerdatastandards.conformance.ConformanceErrorType;
 import au.org.consumerdatastandards.support.data.CDSDataType;
 import au.org.consumerdatastandards.support.data.CustomDataType;
 import au.org.consumerdatastandards.support.data.DataDefinition;
@@ -29,7 +28,7 @@ public class ConformanceUtil {
             Map<String, Object> propertyValues = getPropertyValues(data, anyOfProperties);
             if (propertyValues.isEmpty()) {
                 errors.add(new ConformanceError()
-                    .errorType(ConformanceErrorType.BROKEN_CONSTRAINT)
+                    .errorType(ConformanceError.Type.BROKEN_CONSTRAINT)
                     .dataObject(data)
                     .errorMessage(buildAnyOfErrorMessage(data, anyOfProperties, propertyValues))
                 );
@@ -40,7 +39,7 @@ public class ConformanceUtil {
             Object dataFieldValue = getDataFieldValue(data, modelField);
             if (modelField.getAnnotation(Property.class).required() && dataFieldValue == null) {
                 errors.add(new ConformanceError()
-                    .errorType(ConformanceErrorType.MISSING_VALUE)
+                    .errorType(ConformanceError.Type.MISSING_VALUE)
                     .dataObject(data).modelClass(model)
                     .errorField(modelField));
             } else if (dataFieldValue != null && modelField.isAnnotationPresent(CDSDataType.class)) {
@@ -49,7 +48,7 @@ public class ConformanceUtil {
                 if (customDataType.getPattern() != null) {
                     if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
                         errors.add(new ConformanceError()
-                            .errorType(ConformanceErrorType.PATTERN_NOT_MATCHED)
+                            .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
                             .dataObject(data).modelClass(model)
                             .errorField(modelField)
                         );
@@ -58,7 +57,7 @@ public class ConformanceUtil {
                 Number min = customDataType.getMin();
                 if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
                     errors.add(new ConformanceError()
-                        .errorType(ConformanceErrorType.NUMBER_TOO_SMALL)
+                        .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
                         .dataObject(data).modelClass(model)
                         .errorField(modelField)
                     );
@@ -66,7 +65,7 @@ public class ConformanceUtil {
                 Number max = customDataType.getMax();
                 if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
                     errors.add(new ConformanceError()
-                        .errorType(ConformanceErrorType.NUMBER_TOO_BIG)
+                        .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
                         .dataObject(data).modelClass(model)
                         .errorField(modelField)
                     );

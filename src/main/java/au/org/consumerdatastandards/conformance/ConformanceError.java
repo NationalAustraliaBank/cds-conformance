@@ -12,7 +12,7 @@ public class ConformanceError {
 
     private Object dataObject;
 
-    private ConformanceErrorType errorType;
+    private Type errorType;
 
     private Field errorField;
 
@@ -28,7 +28,7 @@ public class ConformanceError {
         return this;
     }
 
-    public ConformanceError errorType(ConformanceErrorType errorType) {
+    public ConformanceError errorType(Type errorType) {
         this.errorType = errorType;
         return this;
     }
@@ -65,5 +65,16 @@ public class ConformanceError {
                 if (StringUtils.isBlank(message)) return message;
                 else return "Unknown error";
         }
+    }
+
+    public enum Type {
+
+        MISSING_PROPERTY,
+        MISSING_VALUE,
+        NO_MATCHING_MODEL,
+        BROKEN_CONSTRAINT,
+        PATTERN_NOT_MATCHED,
+        NUMBER_TOO_SMALL,
+        NUMBER_TOO_BIG
     }
 }

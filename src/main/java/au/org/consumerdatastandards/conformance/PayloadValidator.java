@@ -76,7 +76,7 @@ public class PayloadValidator {
             }
         }
         return Collections.singletonList(new ConformanceError()
-            .errorType(ConformanceErrorType.NO_MATCHING_MODEL)
+            .errorType(ConformanceError.Type.NO_MATCHING_MODEL)
             .errorMessage("No matching model found"));
     }
 
