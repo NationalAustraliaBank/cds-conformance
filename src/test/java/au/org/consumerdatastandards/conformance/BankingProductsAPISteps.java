@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 
 import static au.org.consumerdatastandards.api.banking.BankingProductsAPI.ParamEffective;
+import static au.org.consumerdatastandards.conformance.ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA;
 import static net.serenitybdd.rest.SerenityRest.given;
 import static org.junit.Assert.*;
 
@@ -107,7 +108,7 @@ public class BankingProductsAPISteps {
             List<ConformanceError> conformanceErrors = new ArrayList<>();
             String contentType = listProductsResponse.contentType();
             if (!"application/json".equals(contentType)) {
-                conformanceErrors.add(new ConformanceError()
+                conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorMessage("missing content-type application/json in response header"));
             }
             String json = listProductsResponse.getBody().asString();
@@ -145,7 +146,7 @@ public class BankingProductsAPISteps {
         if (!StringUtils.isBlank(productCategory)) {
             BankingEnumProductCategory bankingProductCategory = getProductCategory(bankingProduct);
             if (bankingProductCategory == null || !bankingProductCategory.name().equals(productCategory)) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -164,7 +165,7 @@ public class BankingProductsAPISteps {
         if (!StringUtils.isBlank(brand)) {
             String productBrand = getProductBrand(bankingProduct);
             if (StringUtils.isBlank(productBrand) || !productBrand.contains(brand)) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -184,7 +185,7 @@ public class BankingProductsAPISteps {
             DateTime updatedSinceTime = DateTime.parseRfc3339(updatedSince);
             DateTime lastUpdatedTime = getLastUpdatedTime(bankingProduct);
             if (updatedSinceTime.getValue() > lastUpdatedTime.getValue()) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -212,7 +213,7 @@ public class BankingProductsAPISteps {
         DateTime effectiveToDate = getEffectiveToDate(bankingProduct);
         if (StringUtils.isBlank(effective) || effective.equals(ParamEffective.CURRENT)) {
             if (effectiveFromDate != null && effectiveFromDate.getValue() > now) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -220,7 +221,7 @@ public class BankingProductsAPISteps {
                 );
             }
             if (effectiveToDate != null && effectiveToDate.getValue() < now) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveTo", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -230,7 +231,7 @@ public class BankingProductsAPISteps {
         }
         if (ParamEffective.FUTURE.equals(effective)) {
             if (effectiveFromDate == null || effectiveFromDate.getValue() <= now) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
                     .modelClass(BankingProduct.class)
                     .dataObject(bankingProduct)
@@ -309,9 +310,9 @@ public class BankingProductsAPISteps {
         } else {
             assertEquals(statusCode, ResponseCode.OK.getCode());
             List<ConformanceError> conformanceErrors = new ArrayList<>();
-            String contentType = listProductsResponse.contentType();
+            String contentType = getProductDetailResponse.contentType();
             if (!"application/json".equals(contentType)) {
-                conformanceErrors.add(new ConformanceError()
+                conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorMessage("missing content-type application/json in response header"));
             }
             String json = getProductDetailResponse.getBody().asString();
@@ -322,7 +323,7 @@ public class BankingProductsAPISteps {
                 Object data = getBankingProductDetail(responseBankingProductById);
                 String id = getProductId(data);
                 if (!id.equals(productId)) {
-                    conformanceErrors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .dataObject(responseBankingProductById)
                         .modelClass(ResponseBankingProductById.class)
                         .errorMessage(String.format("Response productId %s does not match request productId %s", id, productId))
