@@ -33,7 +33,6 @@
     </developers>
     <properties>
         <java.version>1.8</java.version>
-        <cds-client-java.version>0.9.3-SNAPSHOT</cds-client-java.version>
         <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
         <cds-models.version>0.9.3-SNAPSHOT</cds-models.version>
         <jackson.version>2.9.8</jackson.version>
