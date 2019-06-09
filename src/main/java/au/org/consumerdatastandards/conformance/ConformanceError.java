@@ -62,7 +62,7 @@ public class ConformanceError {
                 return String.format("'%s' value in %s is bigger than CDS type %s max value %s",
                     errorField.getName(), dataObject, dataType.getName(), dataType.getMax());
             default:
-                if (StringUtils.isBlank(message)) return message;
+                if (!StringUtils.isBlank(message)) return message;
                 else return "Unknown error";
         }
     }
@@ -75,6 +75,7 @@ public class ConformanceError {
         BROKEN_CONSTRAINT,
         PATTERN_NOT_MATCHED,
         NUMBER_TOO_SMALL,
-        NUMBER_TOO_BIG
+        NUMBER_TOO_BIG,
+        DATA_NOT_MATCHING_CRITERIA
     }
 }
