@@ -104,11 +104,17 @@ public class BankingProductsAPISteps {
             assertEquals(statusCode, ResponseCode.BAD_REQUEST.getCode());
         } else {
             assertEquals(statusCode, ResponseCode.OK.getCode());
+            List<ConformanceError> conformanceErrors = new ArrayList<>();
+            String contentType = listProductsResponse.contentType();
+            if (!"application/json".equals(contentType)) {
+                conformanceErrors.add(new ConformanceError()
+                    .errorMessage("missing content-type application/json in response header"));
+            }
             String json = listProductsResponse.getBody().asString();
             ObjectMapper objectMapper = payloadValidator.createObjectMapper();
             try {
                 responseBankingProductList = objectMapper.readValue(json, ResponseBankingProductList.class);
-                List<ConformanceError> conformanceErrors = payloadValidator.validateResponse(this.requestUrl, responseBankingProductList, "listProducts", statusCode);
+                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductList, "listProducts", statusCode));
                 ResponseBankingProductListData data = getProductListData(responseBankingProductList);
                 List<BankingProduct> products = getProducts(data);
                 if (products != null && !products.isEmpty()) {
@@ -302,11 +308,17 @@ public class BankingProductsAPISteps {
             assertEquals(statusCode, ResponseCode.BAD_REQUEST.getCode());
         } else {
             assertEquals(statusCode, ResponseCode.OK.getCode());
+            List<ConformanceError> conformanceErrors = new ArrayList<>();
+            String contentType = listProductsResponse.contentType();
+            if (!"application/json".equals(contentType)) {
+                conformanceErrors.add(new ConformanceError()
+                    .errorMessage("missing content-type application/json in response header"));
+            }
             String json = getProductDetailResponse.getBody().asString();
             ObjectMapper objectMapper = payloadValidator.createObjectMapper();
             try {
                 ResponseBankingProductById responseBankingProductById = objectMapper.readValue(json, ResponseBankingProductById.class);
-                List<ConformanceError> conformanceErrors = payloadValidator.validateResponse(this.requestUrl, responseBankingProductById, "getProductDetail", statusCode);
+                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductById, "getProductDetail", statusCode));
                 Object data = getBankingProductDetail(responseBankingProductById);
                 String id = getProductId(data);
                 if (!id.equals(productId)) {

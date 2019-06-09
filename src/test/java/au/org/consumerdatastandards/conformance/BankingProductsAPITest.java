@@ -1,6 +1,5 @@
 package au.org.consumerdatastandards.conformance;
 
-import au.org.consumerdatastandards.api.banking.models.ResponseBankingProductList;
 import net.serenitybdd.junit.runners.SerenityParameterizedRunner;
 import net.thucydides.core.annotations.Steps;
 import net.thucydides.junit.annotations.UseTestDataFrom;
