@@ -211,7 +211,7 @@ public class BankingProductsAPISteps {
         long now = System.currentTimeMillis();
         DateTime effectiveFromDate = getEffectiveFromDate(bankingProduct);
         DateTime effectiveToDate = getEffectiveToDate(bankingProduct);
-        if (StringUtils.isBlank(effective) || effective.equals(ParamEffective.CURRENT)) {
+        if (StringUtils.isBlank(effective) || effective.equals(ParamEffective.CURRENT.name())) {
             if (effectiveFromDate != null && effectiveFromDate.getValue() > now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
@@ -229,7 +229,7 @@ public class BankingProductsAPISteps {
                 );
             }
         }
-        if (ParamEffective.FUTURE.equals(effective)) {
+        if (ParamEffective.FUTURE.name().equals(effective)) {
             if (effectiveFromDate == null || effectiveFromDate.getValue() <= now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
