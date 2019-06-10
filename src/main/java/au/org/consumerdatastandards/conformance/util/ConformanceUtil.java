@@ -27,7 +27,7 @@ public class ConformanceUtil {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.BROKEN_CONSTRAINT)
                     .dataObject(data)
-                    .errorMessage(buildAnyOfErrorMessage(data, anyOfProperties, propertyValues))
+                    .errorMessage(buildAnyOfErrorMessage(anyOfProperties))
                 );
             }
         }
@@ -47,35 +47,32 @@ public class ConformanceUtil {
             }
             Condition[] conditions = property.requiredIf();
             if (conditions.length > 0) {
-                boolean conditionsMet = true;
+
                 Condition condition = conditions[0];
                 Field relatedProperty = propertyMap.get(condition.propertyName());
-                Object relatedPropertyValue = null;
                 if (relatedProperty != null) {
-                    relatedPropertyValue = getDataFieldValue(data, relatedProperty);
-                    if (!isValueSpecified(relatedPropertyValue, condition.values())) {
-                        conditionsMet = false;
-                    }
-                }
-                if (conditionsMet && dataFieldValue == null) {
-                    errors.add(new ConformanceError()
-                        .errorType(ConformanceError.Type.MISSING_VALUE)
-                        .dataObject(data).modelClass(model)
-                        .errorField(modelField)
-                        .errorMessage(String.format("%s is required given %s value is %s",
-                            modelField.getName(), relatedProperty.getName(), relatedPropertyValue)));
-                } else if (conditionsMet) {
-                    CDSDataType requiredCDSDataType = null;
-                    ConditionalCDSDataType[] conditionalCDSDataTypes = condition.conditionalCDSDataTypes();
-                    if (conditionalCDSDataTypes.length > 0) {
-                        for (ConditionalCDSDataType conditionalCDSDataType : conditionalCDSDataTypes) {
-                            if (conditionalCDSDataType.value().equals("" + relatedPropertyValue)) {
-                                requiredCDSDataType = conditionalCDSDataType.cdsDataType();
+                    Object relatedPropertyValue = getDataFieldValue(data, relatedProperty);
+                    boolean conditionsMet = isValueSpecified(relatedPropertyValue, condition.values());
+                    if (conditionsMet && dataFieldValue == null) {
+                        errors.add(new ConformanceError()
+                            .errorType(ConformanceError.Type.MISSING_VALUE)
+                            .dataObject(data).modelClass(model)
+                            .errorField(modelField)
+                            .errorMessage(String.format("%s is required given %s value is %s",
+                                modelField.getName(), relatedProperty.getName(), relatedPropertyValue)));
+                    } else if (conditionsMet) {
+                        CDSDataType requiredCDSDataType = null;
+                        ConditionalCDSDataType[] conditionalCDSDataTypes = condition.conditionalCDSDataTypes();
+                        if (conditionalCDSDataTypes.length > 0) {
+                            for (ConditionalCDSDataType conditionalCDSDataType : conditionalCDSDataTypes) {
+                                if (conditionalCDSDataType.value().equals("" + relatedPropertyValue)) {
+                                    requiredCDSDataType = conditionalCDSDataType.cdsDataType();
+                                }
                             }
                         }
-                    }
-                    if (requiredCDSDataType != null) {
-                        checkAgainstCDSDataType(data, model, modelField, dataFieldValue, requiredCDSDataType, errors);
+                        if (requiredCDSDataType != null) {
+                            checkAgainstCDSDataType(data, model, modelField, dataFieldValue, requiredCDSDataType, errors);
+                        }
                     }
                 }
             }
@@ -150,7 +147,7 @@ public class ConformanceUtil {
         }
     }
 
-    private static String buildAnyOfErrorMessage(Object data, String[] anyOfProperties, Map<String, Object> values) {
+    private static String buildAnyOfErrorMessage(String[] anyOfProperties) {
         StringBuilder sb = new StringBuilder("At least one of the [");
         for (int i = 0; i < anyOfProperties.length; i++) {
             if (i > 0) sb.append(", ");
@@ -248,7 +245,7 @@ public class ConformanceUtil {
     }
 
 
-    public static Object[] unpack(Object array) {
+    private static Object[] unpack(Object array) {
         Object[] values = new Object[Array.getLength(array)];
         for (int i = 0; i < values.length; i++)
             values[i] = Array.get(array, i);
