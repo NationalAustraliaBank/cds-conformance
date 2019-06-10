@@ -48,11 +48,11 @@ public class ConformanceUtil {
             if (property.required() && dataFieldValue == null) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.MISSING_VALUE)
-                    .dataJson(toJson(data)).modelClass(model)
+                    .dataJson(toJson(data))
                     .errorField(modelField));
             } else if (dataFieldValue != null && modelField.isAnnotationPresent(CDSDataType.class)) {
                 CDSDataType cdsDataType = modelField.getAnnotation(CDSDataType.class);
-                checkAgainstCDSDataType(data, model, modelField, dataFieldValue, cdsDataType, errors);
+                checkAgainstCDSDataType(data, modelField, dataFieldValue, cdsDataType, errors);
             }
             Condition[] conditions = property.requiredIf();
             if (conditions.length > 0) {
@@ -65,7 +65,7 @@ public class ConformanceUtil {
                     if (conditionsMet && dataFieldValue == null) {
                         errors.add(new ConformanceError()
                             .errorType(ConformanceError.Type.MISSING_VALUE)
-                            .dataJson(toJson(data)).modelClass(model)
+                            .dataJson(toJson(data))
                             .errorField(modelField)
                             .errorMessage(String.format("%s is required given %s value is %s",
                                 modelField.getName(), relatedProperty.getName(), relatedPropertyValue)));
@@ -80,7 +80,7 @@ public class ConformanceUtil {
                             }
                         }
                         if (requiredCDSDataType != null) {
-                            checkAgainstCDSDataType(data, model, modelField, dataFieldValue, requiredCDSDataType, errors);
+                            checkAgainstCDSDataType(data, modelField, dataFieldValue, requiredCDSDataType, errors);
                         }
                     }
                 }
@@ -136,15 +136,16 @@ public class ConformanceUtil {
         return false;
     }
 
-    private static void checkAgainstCDSDataType(Object data, Class<?> model, Field modelField, Object dataFieldValue, CDSDataType cdsDataType, List<ConformanceError> errors) {
+    private static void checkAgainstCDSDataType(Object data, Field modelField, Object dataFieldValue, CDSDataType cdsDataType, List<ConformanceError> errors) {
         CustomDataType customDataType = cdsDataType.value();
         if (customDataType.getPattern() != null) {
             if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
                     .cdsDataType(cdsDataType)
-                    .dataJson(toJson(data)).modelClass(model)
+                    .dataJson(toJson(data))
                     .errorField(modelField)
+                    .errorFieldValue(dataFieldValue)
                 );
             }
         }
@@ -152,16 +153,18 @@ public class ConformanceUtil {
         if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
-                .dataJson(toJson(data)).modelClass(model)
+                .dataJson(toJson(data))
                 .errorField(modelField)
+                .errorFieldValue(dataFieldValue)
             );
         }
         Number max = customDataType.getMax();
         if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
-                .dataJson(toJson(data)).modelClass(model)
+                .dataJson(toJson(data))
                 .errorField(modelField)
+                .errorFieldValue(dataFieldValue)
             );
         }
     }

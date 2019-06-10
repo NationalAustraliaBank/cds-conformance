@@ -149,7 +149,6 @@ public class BankingProductsAPISteps {
             if (bankingProductCategory == null || !bankingProductCategory.name().equals(productCategory)) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct productCategory %s does not match productCategory query %s", bankingProductCategory, productCategory))
                 );
@@ -168,7 +167,6 @@ public class BankingProductsAPISteps {
             if (StringUtils.isBlank(productBrand) || !productBrand.contains(brand)) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct brand %s does not match brand query %s", productBrand, brand))
                 );
@@ -188,7 +186,6 @@ public class BankingProductsAPISteps {
             if (updatedSinceTime.getValue() > lastUpdatedTime.getValue()) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct lastUpdated %s is before updatedSince %s", lastUpdatedTime, updatedSinceTime))
                 );
@@ -216,7 +213,6 @@ public class BankingProductsAPISteps {
             if (effectiveFromDate != null && effectiveFromDate.getValue() > now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct effectiveFrom %s is after current time %s", effectiveFromDate, new Date(now)))
                 );
@@ -224,7 +220,6 @@ public class BankingProductsAPISteps {
             if (effectiveToDate != null && effectiveToDate.getValue() < now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveTo", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct effectiveTo %s is before current time %s", effectiveFromDate, new Date(now)))
                 );
@@ -234,7 +229,6 @@ public class BankingProductsAPISteps {
             if (effectiveFromDate == null || effectiveFromDate.getValue() <= now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .modelClass(BankingProduct.class)
                     .dataJson(ConformanceUtil.toJson(bankingProduct))
                     .errorMessage(String.format("BankingProduct effectiveFrom %s is not after current time %s", effectiveFromDate, new Date(now)))
                 );
@@ -326,7 +320,6 @@ public class BankingProductsAPISteps {
                 if (!id.equals(productId)) {
                     conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .dataJson(ConformanceUtil.toJson(responseBankingProductById))
-                        .modelClass(ResponseBankingProductById.class)
                         .errorMessage(String.format("Response productId %s does not match request productId %s", id, productId))
                     );
                 }

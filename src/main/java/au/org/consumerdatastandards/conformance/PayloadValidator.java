@@ -117,14 +117,12 @@ public class PayloadValidator {
             LinksPaginated links = getLinksPaginated(response);
             if (meta == null) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                    .modelClass(response.getClass())
                     .dataJson(ConformanceUtil.toJson(response))
                     .errorMessage(String.format("%s does not have meta data", response))
                 );
             }
             if (links == null) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                    .modelClass(response.getClass())
                     .dataJson(ConformanceUtil.toJson(response))
                     .errorMessage(String.format("%s does not have links data", response))
                 );
@@ -136,7 +134,6 @@ public class PayloadValidator {
                 String self = getSelf(links);
                 if (StringUtils.isBlank(first)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .modelClass(links.getClass())
                         .dataJson(ConformanceUtil.toJson(links))
                         .errorMessage(String.format("%s\ndoes not have first link data", links))
                     );
@@ -144,7 +141,6 @@ public class PayloadValidator {
                     String firstLinkPageParam = getParameter(first, "page");
                     if (!"1".equals(firstLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .modelClass(links.getClass())
                             .dataJson(ConformanceUtil.toJson(links))
                             .errorMessage(String.format("first link %s does not have page param value as 1", first))
                         );
@@ -152,7 +148,6 @@ public class PayloadValidator {
                     String firstLinkPageSizeParam = getParameter(first, "page-size");
                     if (pageSize.toString().equals(firstLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .modelClass(links.getClass())
                             .dataJson(ConformanceUtil.toJson(links))
                             .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s", first, firstLinkPageSizeParam, pageSize))
                         );
@@ -160,7 +155,6 @@ public class PayloadValidator {
                 }
                 if (StringUtils.isBlank(last)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .modelClass(links.getClass())
                         .dataJson(ConformanceUtil.toJson(links))
                         .errorMessage(String.format("%s does not have last link data", links))
                     );
@@ -168,7 +162,6 @@ public class PayloadValidator {
                     String lastLinkPageParam = getParameter(last, "page");
                     if (StringUtils.isBlank(lastLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .modelClass(links.getClass())
                             .dataJson(ConformanceUtil.toJson(links))
                             .errorMessage(String.format("last link %s does not have page param", last))
                         );
@@ -177,28 +170,24 @@ public class PayloadValidator {
                             Integer lastLinkPage = Integer.parseInt(lastLinkPageParam);
                             if (lastLinkPage < page) {
                                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .modelClass(links.getClass())
                                     .dataJson(ConformanceUtil.toJson(links))
                                     .errorMessage(String.format("last link %s have invalid page param %s", last, lastLinkPage))
                                 );
                             } else if (lastLinkPage.equals(page)) {
                                 if (!StringUtils.isBlank(next)) {
                                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                        .modelClass(links.getClass())
                                         .dataJson(ConformanceUtil.toJson(links))
                                         .errorMessage(String.format("Next %s should be null as current page is the last page and there should be no next page", next))
                                     );
                                 }
                             } else if (StringUtils.isBlank(next)) {
                                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .modelClass(links.getClass())
                                     .dataJson(ConformanceUtil.toJson(links))
                                     .errorMessage(String.format("Next link should not be null as current page %d is not the last page and there should be next page", page))
                                 );
                             }
                         } catch (NumberFormatException e) {
                             errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                .modelClass(links.getClass())
                                 .dataJson(ConformanceUtil.toJson(links))
                                 .errorMessage(String.format("last link %s does not have page param", last))
                             );
@@ -207,7 +196,6 @@ public class PayloadValidator {
                     String lastLinkPageSizeParam = getParameter(last, "page-size");
                     if (pageSize.toString().equals(lastLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .modelClass(links.getClass())
                             .dataJson(ConformanceUtil.toJson(links))
                             .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s", last, lastLinkPageSizeParam, pageSize))
                         );
@@ -215,13 +203,11 @@ public class PayloadValidator {
                 }
                 if (!requestUrl.equals(self)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .modelClass(links.getClass())
                         .dataJson(ConformanceUtil.toJson(links))
                         .errorMessage(String.format("Self %s does not match request url %s", self, requestUrl))
                     );
                 } else if (page == 1 && !StringUtils.isBlank(prev)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .modelClass(links.getClass())
                         .dataJson(ConformanceUtil.toJson(links))
                         .errorMessage(String.format("Prev %s should be null as current page is the first page and there should be no prev page", prev))
                     );
@@ -288,7 +274,6 @@ public class PayloadValidator {
         if (links == null) {
             errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
                 .errorField(linksField)
-                .modelClass(response.getClass())
                 .dataJson(ConformanceUtil.toJson(response))
                 .errorMessage(String.format("%s\ndoes not have links data", response))
             );
@@ -298,7 +283,6 @@ public class PayloadValidator {
             if (!requestUrl.equals(selfLink)) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
                     .errorField(selfField)
-                    .modelClass(links.getClass())
                     .dataJson(ConformanceUtil.toJson(links))
                     .errorMessage(String.format("Self %s does not match original request url %s", selfLink, requestUrl))
                 );
