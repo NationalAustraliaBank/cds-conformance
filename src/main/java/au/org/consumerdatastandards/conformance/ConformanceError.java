@@ -58,7 +58,7 @@ public class ConformanceError {
                 return String.format("Required field '%s' is missing in\n%s", errorField.getName(), dataJson);
             case PATTERN_NOT_MATCHED:
                 CustomDataType customDataType = cdsDataType.value();
-                return String.format("%s in\n%s\ndoes not conform to CDS type %s format",
+                return String.format("%s in\n%s\ndoes not conform to CDS type %s",
                     errorField.getName(), dataJson, customDataType.getName());
             case NUMBER_TOO_SMALL:
                 CustomDataType customType = errorField.getAnnotation(CDSDataType.class).value();
