@@ -2,10 +2,7 @@ package au.org.consumerdatastandards.conformance.util;
 
 import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.ConformanceError;
-import au.org.consumerdatastandards.support.data.CDSDataType;
-import au.org.consumerdatastandards.support.data.CustomDataType;
-import au.org.consumerdatastandards.support.data.DataDefinition;
-import au.org.consumerdatastandards.support.data.Property;
+import au.org.consumerdatastandards.support.data.*;
 import net.sf.cglib.beans.BeanGenerator;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
@@ -35,40 +32,51 @@ public class ConformanceUtil {
             }
         }
         List<Field> properties = getAllProperties(model);
+        Map<String, Field> propertyMap = buildPropertyMap(properties);
         for (Field modelField : properties) {
             Object dataFieldValue = getDataFieldValue(data, modelField);
-            if (modelField.getAnnotation(Property.class).required() && dataFieldValue == null) {
+            Property property = modelField.getAnnotation(Property.class);
+            if (property.required() && dataFieldValue == null) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.MISSING_VALUE)
                     .dataObject(data).modelClass(model)
                     .errorField(modelField));
             } else if (dataFieldValue != null && modelField.isAnnotationPresent(CDSDataType.class)) {
                 CDSDataType cdsDataType = modelField.getAnnotation(CDSDataType.class);
-                CustomDataType customDataType = cdsDataType.value();
-                if (customDataType.getPattern() != null) {
-                    if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
-                        errors.add(new ConformanceError()
-                            .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
-                            .dataObject(data).modelClass(model)
-                            .errorField(modelField)
-                        );
+                checkAgainstCDSDataType(data, model, modelField, dataFieldValue, cdsDataType, errors);
+            }
+            Condition[] conditions = property.requiredIf();
+            if (conditions.length > 0) {
+                boolean conditionsMet = true;
+                Condition condition = conditions[0];
+                Field relatedProperty = propertyMap.get(condition.propertyName());
+                Object relatedPropertyValue = null;
+                if (relatedProperty != null) {
+                    relatedPropertyValue = getDataFieldValue(data, relatedProperty);
+                    if (!isValueSpecified(relatedPropertyValue, condition.values())) {
+                        conditionsMet = false;
                     }
                 }
-                Number min = customDataType.getMin();
-                if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
+                if (conditionsMet && dataFieldValue == null) {
                     errors.add(new ConformanceError()
-                        .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
+                        .errorType(ConformanceError.Type.MISSING_VALUE)
                         .dataObject(data).modelClass(model)
                         .errorField(modelField)
-                    );
-                }
-                Number max = customDataType.getMax();
-                if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
-                    errors.add(new ConformanceError()
-                        .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
-                        .dataObject(data).modelClass(model)
-                        .errorField(modelField)
-                    );
+                        .errorMessage(String.format("%s is required given %s value is %s",
+                            modelField.getName(), relatedProperty.getName(), relatedPropertyValue)));
+                } else if (conditionsMet) {
+                    CDSDataType requiredCDSDataType = null;
+                    ConditionalCDSDataType[] conditionalCDSDataTypes = condition.conditionalCDSDataTypes();
+                    if (conditionalCDSDataTypes.length > 0) {
+                        for (ConditionalCDSDataType conditionalCDSDataType : conditionalCDSDataTypes) {
+                            if (conditionalCDSDataType.value().equals("" + relatedPropertyValue)) {
+                                requiredCDSDataType = conditionalCDSDataType.cdsDataType();
+                            }
+                        }
+                    }
+                    if (requiredCDSDataType != null) {
+                        checkAgainstCDSDataType(data, model, modelField, dataFieldValue, requiredCDSDataType, errors);
+                    }
                 }
             }
             Class<?> modelFieldType = modelField.getType();
@@ -103,6 +111,45 @@ public class ConformanceUtil {
         }
     }
 
+    private static boolean isValueSpecified(Object relatedPropertyValue, String[] values) {
+        if (relatedPropertyValue == null) return false;
+        for (String value : values) {
+            if (value.equals(relatedPropertyValue.toString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void checkAgainstCDSDataType(Object data, Class<?> model, Field modelField, Object dataFieldValue, CDSDataType cdsDataType, List<ConformanceError> errors) {
+        CustomDataType customDataType = cdsDataType.value();
+        if (customDataType.getPattern() != null) {
+            if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
+                errors.add(new ConformanceError()
+                    .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
+                    .dataObject(data).modelClass(model)
+                    .errorField(modelField)
+                );
+            }
+        }
+        Number min = customDataType.getMin();
+        if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
+            errors.add(new ConformanceError()
+                .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
+                .dataObject(data).modelClass(model)
+                .errorField(modelField)
+            );
+        }
+        Number max = customDataType.getMax();
+        if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
+            errors.add(new ConformanceError()
+                .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
+                .dataObject(data).modelClass(model)
+                .errorField(modelField)
+            );
+        }
+    }
+
     private static String buildAnyOfErrorMessage(Object data, String[] anyOfProperties, Map<String, Object> values) {
         StringBuilder sb = new StringBuilder("At least one of the [");
         for (int i = 0; i < anyOfProperties.length; i++) {
@@ -122,6 +169,12 @@ public class ConformanceUtil {
             }
         }
         return properties;
+    }
+
+    private static Map<String, Field> buildPropertyMap(List<Field> properties) {
+        Map<String, Field> map = new HashMap<>();
+        properties.forEach(p -> map.put(p.getName(), p));
+        return map;
     }
 
     private static String[] getAnyOfProperties(Class<?> model) {
