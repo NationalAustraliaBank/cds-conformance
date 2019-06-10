@@ -8,23 +8,20 @@ import java.lang.reflect.Field;
 
 public class ConformanceError {
 
-    private Class<?> modelClass;
-
-    private Object dataObject;
+    private String dataJson;
 
     private Type errorType;
 
     private Field errorField;
 
+    private Object errorFieldValue;
+
+    private CDSDataType cdsDataType;
+
     private String message;
 
-    public ConformanceError modelClass(Class<?> modelClass) {
-        this.modelClass = modelClass;
-        return this;
-    }
-
-    public ConformanceError dataObject(Object dataObject) {
-        this.dataObject = dataObject;
+    public ConformanceError dataJson(String dataJson) {
+        this.dataJson = dataJson;
         return this;
     }
 
@@ -38,6 +35,16 @@ public class ConformanceError {
         return this;
     }
 
+    public ConformanceError errorFieldValue(Object errorFieldValue) {
+        this.errorFieldValue = errorFieldValue;
+        return this;
+    }
+
+    public ConformanceError cdsDataType(CDSDataType cdsDataType) {
+        this.cdsDataType = cdsDataType;
+        return this;
+    }
+
     public ConformanceError errorMessage(String message) {
         this.message = message;
         return this;
@@ -46,21 +53,21 @@ public class ConformanceError {
     public String getDescription() {
         switch (errorType) {
             case MISSING_VALUE:
-                return String.format("Required field '%s' in '%s' has NULL value", errorField.getName(), modelClass.getSimpleName());
+                return String.format("Required field '%s' has NULL value in\n%s", errorField.getName(), dataJson);
             case MISSING_PROPERTY:
-                return String.format("Required field '%s' is missing in %s", errorField.getName(), dataObject);
+                return String.format("Required field '%s' is missing in\n%s", errorField.getName(), dataJson);
             case PATTERN_NOT_MATCHED:
-                CustomDataType customDataType = errorField.getAnnotation(CDSDataType.class).value();
-                return String.format("'%s' value in %s does not conform to CDS type %s format",
-                    errorField.getName(), dataObject, customDataType.getName());
+                CustomDataType customDataType = cdsDataType.value();
+                return String.format("%s '%s' in\n%s\ndoes not conform to CDS type %s",
+                    errorField.getName(), errorFieldValue, dataJson, customDataType.getName());
             case NUMBER_TOO_SMALL:
                 CustomDataType customType = errorField.getAnnotation(CDSDataType.class).value();
-                return String.format("'%s' value in %s is smaller than CDS type %s minimum value %s",
-                    errorField.getName(), dataObject, customType.getName(), customType.getMin());
+                return String.format("%s '%s' in\n%s\nis smaller than CDS type %s minimum value %s",
+                    errorField.getName(), errorFieldValue, dataJson, customType.getName(), customType.getMin());
             case NUMBER_TOO_BIG:
                 CustomDataType dataType = errorField.getAnnotation(CDSDataType.class).value();
-                return String.format("'%s' value in %s is bigger than CDS type %s max value %s",
-                    errorField.getName(), dataObject, dataType.getName(), dataType.getMax());
+                return String.format("%s '%s' in\n%s\nis bigger than CDS type %s max value %s",
+                    errorField.getName(), errorFieldValue, dataJson, dataType.getName(), dataType.getMax());
             default:
                 if (!StringUtils.isBlank(message)) return message;
                 else return "Unknown error";
