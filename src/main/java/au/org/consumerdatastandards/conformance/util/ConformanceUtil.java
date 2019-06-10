@@ -1,8 +1,17 @@
 package au.org.consumerdatastandards.conformance.util;
 
 import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
+import au.org.consumerdatastandards.conformance.CglibBeanDeserializerModifier;
 import au.org.consumerdatastandards.conformance.ConformanceError;
 import au.org.consumerdatastandards.support.data.*;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import net.sf.cglib.beans.BeanGenerator;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
@@ -26,7 +35,7 @@ public class ConformanceUtil {
             if (propertyValues.isEmpty()) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.BROKEN_CONSTRAINT)
-                    .dataObject(data)
+                    .dataJson(toJson(data))
                     .errorMessage(buildAnyOfErrorMessage(anyOfProperties))
                 );
             }
@@ -39,7 +48,7 @@ public class ConformanceUtil {
             if (property.required() && dataFieldValue == null) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.MISSING_VALUE)
-                    .dataObject(data).modelClass(model)
+                    .dataJson(toJson(data)).modelClass(model)
                     .errorField(modelField));
             } else if (dataFieldValue != null && modelField.isAnnotationPresent(CDSDataType.class)) {
                 CDSDataType cdsDataType = modelField.getAnnotation(CDSDataType.class);
@@ -56,7 +65,7 @@ public class ConformanceUtil {
                     if (conditionsMet && dataFieldValue == null) {
                         errors.add(new ConformanceError()
                             .errorType(ConformanceError.Type.MISSING_VALUE)
-                            .dataObject(data).modelClass(model)
+                            .dataJson(toJson(data)).modelClass(model)
                             .errorField(modelField)
                             .errorMessage(String.format("%s is required given %s value is %s",
                                 modelField.getName(), relatedProperty.getName(), relatedPropertyValue)));
@@ -108,6 +117,15 @@ public class ConformanceUtil {
         }
     }
 
+    public static ObjectMapper createObjectMapper() {
+        return new ObjectMapper().registerModule(new ParameterNamesModule())
+            .registerModule(new Jdk8Module()).registerModule(new JavaTimeModule())
+            .registerModule(new SimpleModule().setDeserializerModifier(new CglibBeanDeserializerModifier()))
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    }
+
+
     private static boolean isValueSpecified(Object relatedPropertyValue, String[] values) {
         if (relatedPropertyValue == null) return false;
         for (String value : values) {
@@ -124,7 +142,8 @@ public class ConformanceUtil {
             if (!dataFieldValue.toString().matches(customDataType.getPattern())) {
                 errors.add(new ConformanceError()
                     .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
-                    .dataObject(data).modelClass(model)
+                    .cdsDataType(cdsDataType)
+                    .dataJson(toJson(data)).modelClass(model)
                     .errorField(modelField)
                 );
             }
@@ -133,7 +152,7 @@ public class ConformanceUtil {
         if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
-                .dataObject(data).modelClass(model)
+                .dataJson(toJson(data)).modelClass(model)
                 .errorField(modelField)
             );
         }
@@ -141,7 +160,7 @@ public class ConformanceUtil {
         if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
-                .dataObject(data).modelClass(model)
+                .dataJson(toJson(data)).modelClass(model)
                 .errorField(modelField)
             );
         }
@@ -250,5 +269,13 @@ public class ConformanceUtil {
         for (int i = 0; i < values.length; i++)
             values[i] = Array.get(array, i);
         return values;
+    }
+
+    public static String toJson(Object dataObject) {
+        try {
+            return createObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataObject);
+        } catch (JsonProcessingException e) {
+            return dataObject.toString();
+        }
     }
 }
