@@ -234,42 +234,42 @@ public class PayloadValidator {
     }
 
     private String getFirst(LinksPaginated links) {
-        Field firstField = FieldUtils.getField(links.getClass(), "first", true);
+        Field firstField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"first"), true);
         return (String) ReflectionUtils.getField(firstField, links);
     }
 
     private String getPrev(LinksPaginated links) {
-        Field prevField = FieldUtils.getField(links.getClass(), "prev", true);
+        Field prevField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"prev"), true);
         return (String) ReflectionUtils.getField(prevField, links);
     }
 
     private String getNext(LinksPaginated links) {
-        Field nextField = FieldUtils.getField(links.getClass(), "next", true);
+        Field nextField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"next"), true);
         return (String) ReflectionUtils.getField(nextField, links);
     }
 
     private String getLast(LinksPaginated links) {
-        Field lastField = FieldUtils.getField(links.getClass(), "last", true);
+        Field lastField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"last"), true);
         return (String) ReflectionUtils.getField(lastField, links);
     }
 
     private String getSelf(LinksPaginated links) {
-        Field selfField = FieldUtils.getField(links.getClass(), "self", true);
+        Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"self"), true);
         return (String) ReflectionUtils.getField(selfField, links);
     }
 
     private LinksPaginated getLinksPaginated(Object response) {
-        Field linksField = FieldUtils.getField(response.getClass(), "links", true);
+        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"links"), true);
         return (LinksPaginated) ReflectionUtils.getField(linksField, response);
     }
 
     private MetaPaginated getMetaPaginated(Object response) {
-        Field metaField = FieldUtils.getField(response.getClass(), "meta", true);
+        Field metaField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"meta"), true);
         return (MetaPaginated) ReflectionUtils.getField(metaField, response);
     }
 
     private void checkSelfLink(String requestUrl, Object response, List<ConformanceError> errors) {
-        Field linksField = FieldUtils.getField(response.getClass(), "links", true);
+        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"links"), true);
         Object links = ReflectionUtils.getField(linksField, response);
         if (links == null) {
             errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
@@ -278,7 +278,7 @@ public class PayloadValidator {
                 .errorMessage(String.format("%s\ndoes not have links data", response))
             );
         } else {
-            Field selfField = FieldUtils.getField(links.getClass(), "self", true);
+            Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"self"), true);
             String selfLink = (String) ReflectionUtils.getField(selfField, links);
             if (!requestUrl.equals(selfLink)) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)

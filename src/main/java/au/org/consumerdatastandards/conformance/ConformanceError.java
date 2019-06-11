@@ -1,5 +1,6 @@
 package au.org.consumerdatastandards.conformance;
 
+import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
 import au.org.consumerdatastandards.support.data.CDSDataType;
 import au.org.consumerdatastandards.support.data.CustomDataType;
 import org.apache.commons.lang3.StringUtils;
@@ -53,21 +54,26 @@ public class ConformanceError {
     public String getDescription() {
         switch (errorType) {
             case MISSING_VALUE:
-                return String.format("Required field '%s' has NULL value in\n%s", errorField.getName(), dataJson);
+                return String.format("Required field '%s' has NULL value in\n%s", 
+                    errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""), dataJson);
             case MISSING_PROPERTY:
-                return String.format("Required field '%s' is missing in\n%s", errorField.getName(), dataJson);
+                return String.format("Required field '%s' is missing in\n%s",
+                    errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""), dataJson);
             case PATTERN_NOT_MATCHED:
                 CustomDataType customDataType = cdsDataType.value();
                 return String.format("%s '%s' in\n%s\ndoes not conform to CDS type %s",
-                    errorField.getName(), errorFieldValue, dataJson, customDataType.getName());
+                    errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
+                    errorFieldValue, dataJson, customDataType.getName());
             case NUMBER_TOO_SMALL:
                 CustomDataType customType = errorField.getAnnotation(CDSDataType.class).value();
                 return String.format("%s '%s' in\n%s\nis smaller than CDS type %s minimum value %s",
-                    errorField.getName(), errorFieldValue, dataJson, customType.getName(), customType.getMin());
+                    errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
+                    errorFieldValue, dataJson, customType.getName(), customType.getMin());
             case NUMBER_TOO_BIG:
                 CustomDataType dataType = errorField.getAnnotation(CDSDataType.class).value();
                 return String.format("%s '%s' in\n%s\nis bigger than CDS type %s max value %s",
-                    errorField.getName(), errorFieldValue, dataJson, dataType.getName(), dataType.getMax());
+                    errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
+                    errorFieldValue, dataJson, dataType.getName(), dataType.getMax());
             default:
                 if (!StringUtils.isBlank(message)) return message;
                 else return "Unknown error";

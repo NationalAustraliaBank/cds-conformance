@@ -27,6 +27,7 @@ import java.util.Map;
 public class ConformanceUtil {
 
     public static final String GENERATED_CLASS_SUFFIX = "$ByCDS";
+    public static final String GENERATED_PROPERTY_PREFIX = "$cglib_prop_";
 
     public static void checkAgainstModel(Object data, Class<?> model, List<ConformanceError> errors) {
         String[] anyOfProperties = getAnyOfProperties(model);
@@ -239,8 +240,16 @@ public class ConformanceUtil {
         return clazz.getSimpleName().endsWith(GENERATED_CLASS_SUFFIX);
     }
 
-    static Class<?> combine(Class<?> primaryClass, Class<?>[] allOf) {
+    public static Class<?> expandModel(Class<?> modelClass) {
+        DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
+        if (dataDefinition != null && dataDefinition.allOf().length > 0) {
+            return ConformanceUtil.combine(modelClass, dataDefinition.allOf());
+        } else {
+            return expandIfRequired(modelClass);
+        }
+    }
 
+    static Class<?> combine(Class<?> primaryClass, Class<?>[] allOf) {
         final BeanGenerator beanGenerator = new BeanGenerator();
         beanGenerator.setNamingPolicy((s, s1, o, predicate) -> primaryClass.getName() + GENERATED_CLASS_SUFFIX);
         addProperties(beanGenerator, primaryClass);
@@ -248,6 +257,36 @@ public class ConformanceUtil {
             addProperties(beanGenerator, clazz);
         }
         return (Class<?>) beanGenerator.createClass();
+    }
+
+    private static Class<?> expandIfRequired(Class<?> modelClass) {
+        if (allOfExists(modelClass)) {
+            final BeanGenerator beanGenerator = new BeanGenerator();
+            beanGenerator.setNamingPolicy((s, s1, o, predicate) -> modelClass.getName() + GENERATED_CLASS_SUFFIX);
+            addProperties(beanGenerator, modelClass);
+            return (Class<?>) beanGenerator.createClass();
+        } else {
+            return modelClass;
+        }
+    }
+
+    private static boolean allOfExists(Class<?> modelClass) {
+        if (!modelClass.getName().startsWith("au.org.consumerdatastandards") || modelClass.isEnum()) return false;
+        DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
+        if (dataDefinition != null && dataDefinition.allOf().length > 0) {
+            return true;
+        }
+        Field[] allFields = FieldUtils.getAllFields(modelClass);
+        if (allFields.length == 0) return false;
+        for (Field field : allFields) {
+            if (ReflectionUtil.isSetOrList(field.getType())) {
+                Class<?> itemType = ReflectionUtil.getItemType(field.getType(), field.getGenericType());
+                if (allOfExists(itemType)) return true;
+            } else if (allOfExists(field.getType())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -261,9 +300,9 @@ public class ConformanceUtil {
     private static Class<?> getFieldType(Field field) {
         if (ReflectionUtil.isSetOrList(field.getType())) {
             Class<?> itemType = ReflectionUtil.getItemType(field.getType(), field.getGenericType());
-            return Array.newInstance(itemType, 0).getClass();
+            return Array.newInstance(expandModel(itemType), 0).getClass();
         }
-        return field.getType();
+        return expandModel(field.getType());
     }
 
 
@@ -280,5 +319,12 @@ public class ConformanceUtil {
         } catch (JsonProcessingException e) {
             return dataObject.toString();
         }
+    }
+
+    public static String getFieldName(Object dataObject, String originalFieldName) {
+        if (dataObject.getClass().getSimpleName().endsWith(GENERATED_CLASS_SUFFIX)) {
+            return GENERATED_PROPERTY_PREFIX + originalFieldName;
+        }
+        return originalFieldName;
     }
 }
