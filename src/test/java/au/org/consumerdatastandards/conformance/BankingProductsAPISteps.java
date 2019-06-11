@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
+import org.yecht.Data;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -332,11 +333,20 @@ public class BankingProductsAPISteps {
                 for (ConformanceError error : conformanceErrors) {
                     logger.error(error.getDescription());
                 }
-                assertTrue("Conformance errors found in response payload", conformanceErrors.isEmpty());
+                String message = "Conformance errors found in response payload: " + buildConformanceErrorsDescription(conformanceErrors);
+                assertTrue(message, conformanceErrors.isEmpty());
             } catch (IOException e) {
                 fail(e.getMessage());
             }
         }
+    }
+
+    private String buildConformanceErrorsDescription(List<ConformanceError> conformanceErrors) {
+        StringBuilder sb = new StringBuilder();
+        for (ConformanceError error : conformanceErrors) {
+            sb.append("\n\n").append(error.getDescription());
+        }
+        return sb.toString();
     }
 
     private Object getBankingProductDetail(Object responseBankingProductById) {
