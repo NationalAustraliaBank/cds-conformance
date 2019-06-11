@@ -108,9 +108,14 @@ public class BankingProductsAPISteps {
             assertEquals(statusCode, ResponseCode.OK.getCode());
             List<ConformanceError> conformanceErrors = new ArrayList<>();
             String contentType = listProductsResponse.contentType();
-            if (!"application/json".equals(contentType)) {
+            if (contentType == null) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                     .errorMessage("missing content-type application/json in response header"));
+            } else {
+                if(!contentType.startsWith("application/json")) {
+                    conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
+                            .errorMessage(String.format("invalid content-type of %s specified", contentType)));
+                }
             }
             String json = listProductsResponse.getBody().asString();
             ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
