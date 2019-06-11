@@ -12,11 +12,9 @@ import io.restassured.specification.RequestSpecification;
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
-import org.yecht.Data;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -91,7 +89,7 @@ public class BankingProductsAPISteps {
             requestUrl += (paramAdded ? "&" : "?") + "page-size=" + pageSize;
         }
 
-        listProductsResponse = given.when().get(url).then().log().body().extract().response();
+        listProductsResponse = given.when().get(url).then().log().all().extract().response();
     }
 
     @Step("Validate listProducts response")
@@ -203,7 +201,6 @@ public class BankingProductsAPISteps {
         return getDateTimeFieldValue(bankingProduct, "lastUpdated");
     }
 
-    @Nullable
     private DateTime getDateTimeFieldValue(Object dataObject, String fieldName) {
         Field dataField = FieldUtils.getField(dataObject.getClass(), fieldName, true);
         String fieldValue = (String) ReflectionUtils.getField(dataField, dataObject);
