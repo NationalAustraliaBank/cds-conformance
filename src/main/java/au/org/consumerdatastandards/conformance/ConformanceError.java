@@ -61,19 +61,19 @@ public class ConformanceError {
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""), dataJson);
             case PATTERN_NOT_MATCHED:
                 CustomDataType customDataType = cdsDataType.value();
-                return String.format("%s '%s' in\n%s\ndoes not conform to CDS type %s",
+                return String.format("%s '%s' does not conform to CDS type %s. See below:\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
-                    errorFieldValue, dataJson, customDataType.getName());
+                    errorFieldValue, customDataType.getName(), dataJson);
             case NUMBER_TOO_SMALL:
                 CustomDataType customType = errorField.getAnnotation(CDSDataType.class).value();
-                return String.format("%s '%s' in\n%s\nis smaller than CDS type %s minimum value %s",
+                return String.format("%s '%s' is smaller than CDS type %s minimum value %s. See below:\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
-                    errorFieldValue, dataJson, customType.getName(), customType.getMin());
+                    errorFieldValue, customType.getName(), customType.getMin(), dataJson);
             case NUMBER_TOO_BIG:
                 CustomDataType dataType = errorField.getAnnotation(CDSDataType.class).value();
-                return String.format("%s '%s' in\n%s\nis bigger than CDS type %s max value %s",
+                return String.format("%s '%s' is bigger than CDS type %s max value %s. See below:\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
-                    errorFieldValue, dataJson, dataType.getName(), dataType.getMax());
+                    errorFieldValue, dataType.getName(), dataType.getMax(), dataJson);
             default:
                 if (!StringUtils.isBlank(message)) return message;
                 else return "Unknown error";
