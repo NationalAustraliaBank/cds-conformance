@@ -1,8 +1,13 @@
 package au.org.consumerdatastandards.conformance;
 
 import net.serenitybdd.junit.runners.SerenityParameterizedRunner;
+import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.annotations.Steps;
+import net.thucydides.core.util.EnvironmentVariables;
+import net.thucydides.core.util.SystemEnvironmentVariables;
 import net.thucydides.junit.annotations.UseTestDataFrom;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -21,6 +26,15 @@ public class BankingProductsAPITest {
 
     @Steps
     BankingProductsAPISteps steps;
+
+    @Before
+    public void setApiBasePath() {
+        EnvironmentVariables variables = SystemEnvironmentVariables.createEnvironmentVariables();
+        String apiBasePath = variables.getProperty("apiBase");
+        if (!StringUtils.isBlank(apiBasePath)) {
+            steps.setupApiBasePath(apiBasePath);
+        }
+    }
 
     @Test
     public void listAndGet() {
