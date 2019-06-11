@@ -154,6 +154,7 @@ public class ConformanceUtil {
         if (min != null && new BigDecimal(min.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) > 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_SMALL)
+                .cdsDataType(cdsDataType)
                 .dataJson(toJson(data))
                 .errorField(modelField)
                 .errorFieldValue(dataFieldValue)
@@ -163,6 +164,7 @@ public class ConformanceUtil {
         if (max != null && new BigDecimal(max.toString()).compareTo(new BigDecimal(dataFieldValue.toString())) < 0) {
             errors.add(new ConformanceError()
                 .errorType(ConformanceError.Type.NUMBER_TOO_BIG)
+                .cdsDataType(cdsDataType)
                 .dataJson(toJson(data))
                 .errorField(modelField)
                 .errorFieldValue(dataFieldValue)

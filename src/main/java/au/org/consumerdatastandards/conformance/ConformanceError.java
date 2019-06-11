@@ -65,12 +65,12 @@ public class ConformanceError {
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
                     errorFieldValue, customDataType.getName(), dataJson);
             case NUMBER_TOO_SMALL:
-                CustomDataType customType = errorField.getAnnotation(CDSDataType.class).value();
+                CustomDataType customType = cdsDataType.value();
                 return String.format("%s '%s' is smaller than CDS type %s minimum value %s. See below:\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
                     errorFieldValue, customType.getName(), customType.getMin(), dataJson);
             case NUMBER_TOO_BIG:
-                CustomDataType dataType = errorField.getAnnotation(CDSDataType.class).value();
+                CustomDataType dataType = cdsDataType.value();
                 return String.format("%s '%s' is bigger than CDS type %s max value %s. See below:\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""),
                     errorFieldValue, dataType.getName(), dataType.getMax(), dataJson);
