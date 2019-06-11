@@ -313,7 +313,8 @@ public class BankingProductsAPISteps {
             String json = getProductDetailResponse.getBody().asString();
             ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
             try {
-                ResponseBankingProductById responseBankingProductById = objectMapper.readValue(json, ResponseBankingProductById.class);
+                Class<?> expandedResponseClass = ConformanceUtil.expandModel(ResponseBankingProductById.class);
+                Object responseBankingProductById = objectMapper.readValue(json, expandedResponseClass);
                 conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductById, "getProductDetail", statusCode));
                 Object data = getBankingProductDetail(responseBankingProductById);
                 String id = getProductId(data);
@@ -333,13 +334,15 @@ public class BankingProductsAPISteps {
         }
     }
 
-    private Object getBankingProductDetail(ResponseBankingProductById responseBankingProductById) {
-        Field dataField = FieldUtils.getField(ResponseBankingProductById.class, "data", true);
+    private Object getBankingProductDetail(Object responseBankingProductById) {
+        String dataFieldName = ConformanceUtil.getFieldName(responseBankingProductById, "data");
+        Field dataField = FieldUtils.getField(responseBankingProductById.getClass(), dataFieldName, true);
         return ReflectionUtils.getField(dataField, responseBankingProductById);
     }
 
     private String getProductId(Object data) {
-        Field idField = FieldUtils.getField(data.getClass(), "productId", true);
+        String idFieldName = ConformanceUtil.getFieldName(data,"productId");
+        Field idField = FieldUtils.getField(data.getClass(), idFieldName, true);
         return (String)ReflectionUtils.getField(idField, data);
     }
 

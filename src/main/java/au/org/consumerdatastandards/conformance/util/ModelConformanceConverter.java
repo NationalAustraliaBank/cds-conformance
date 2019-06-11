@@ -137,11 +137,6 @@ public class ModelConformanceConverter {
     }
 
     private static Class<?> getPayloadDataClass(Class<?> dataType) {
-        DataDefinition dataDefinition = dataType.getAnnotation(DataDefinition.class);
-        if (dataDefinition != null && dataDefinition.allOf().length > 0) {
-            return ConformanceUtil.combine(dataType, dataDefinition.allOf());
-        }
-        return dataType;
+        return ConformanceUtil.expandModel(dataType);
     }
-
 }
