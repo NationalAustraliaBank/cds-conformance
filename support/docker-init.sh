@@ -38,9 +38,9 @@ cd /opt/cds-conformance
 
 if [ -z "$TARGET_URI" ]
 then
-    mvn verify
+    mvn verify -Ddockerfile.skip=true
 else
-    mvn verify -DapiBase=$TARGET_URI
+    mvn verify -Ddockerfile.skip=true -DapiBase=$TARGET_URI
 fi
 
 cd target/site/serenity
