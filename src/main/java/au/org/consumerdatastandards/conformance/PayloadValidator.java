@@ -1,8 +1,5 @@
 package au.org.consumerdatastandards.conformance;
 
-import au.org.consumerdatastandards.api.common.models.LinksPaginated;
-import au.org.consumerdatastandards.api.common.models.MetaPaginated;
-import au.org.consumerdatastandards.api.common.models.PaginatedResponse;
 import au.org.consumerdatastandards.codegen.ModelBuilder;
 import au.org.consumerdatastandards.codegen.generator.Options;
 import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
@@ -121,28 +118,29 @@ public class PayloadValidator {
                 .errorMessage("Invalid 'page-size' parameter value " + getParameter(params, "page-size"))
             );
         }
-        if (response instanceof PaginatedResponse) {
-            MetaPaginated meta = getMetaPaginated(response);
+
+        Object meta = getMeta(response);
+        Object links = getLinks(response);
+        if (isPaginatedResponse(meta, links)) {
             Integer totalRecords, totalPages = null;
             if (meta != null) {
                 totalRecords = getTotalRecords(meta);
                 totalPages = getTotalPages(meta);
                 if (totalRecords != null && totalPages != null
-                    && (totalRecords / pageSize + (totalPages % pageSize > 0 ? 1 : 0 )!= totalPages)) {
+                    && (totalRecords / pageSize + (totalPages % pageSize > 0 ? 1 : 0) != totalPages)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage(String.format("totalPages %d does not match totalRecords / page-size + 1. See below:\n%s",
                             totalPages, ConformanceUtil.toJson(meta)))
                     );
                 }
             }
-            LinksPaginated links = getLinksPaginated(response);
             if (links != null) {
                 String linksJson = ConformanceUtil.toJson(links);
-                String first = getFirst(links);
-                String prev = getPrev(links);
-                String next = getNext(links);
-                String last = getLast(links);
-                String self = getSelf(links);
+                String first = getFieldValueAsString(links, "first");
+                String prev = getFieldValueAsString(links, "prev");
+                String next = getFieldValueAsString(links, "next");
+                String last = getFieldValueAsString(links, "last");
+                String self = getFieldValueAsString(links, "self");
                 if (StringUtils.isBlank(first) && totalPages != null && totalPages > 0) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage(String.format("first link data is missing given totalPages %d in meta. See below:\n%s",
@@ -180,7 +178,7 @@ public class PayloadValidator {
                         .errorMessage(String.format("There should be no last link given totalPages %s in meta. See below:\n%s",
                             totalPages, linksJson))
                     );
-                } else if (!StringUtils.isBlank(last)){
+                } else if (!StringUtils.isBlank(last)) {
                     Map<String, Object> lastLinkParams = extractParameters(last);
                     String lastLinkPageParam = getParameter(lastLinkParams, "page");
                     if (StringUtils.isBlank(lastLinkPageParam)) {
@@ -240,10 +238,22 @@ public class PayloadValidator {
                     // TODO validate prev link
                 }
             }
-        } else {
+        } else if (isBaseResponse(meta, links)) {
             checkSelfLink(requestUrl, response, errors);
         }
         return errors;
+    }
+
+    private boolean isBaseResponse(Object meta, Object links) {
+        if (meta == null && links == null) return false;
+        return links != null && FieldUtils.getAllFields(links.getClass()).length == 1 ||
+            meta != null && FieldUtils.getAllFields(meta.getClass()).length == 0;
+    }
+
+    private boolean isPaginatedResponse(Object meta, Object links) {
+        if (meta == null && links == null) return false;
+        return links != null && FieldUtils.getAllFields(links.getClass()).length == 5 ||
+            meta != null && FieldUtils.getAllFields(meta.getClass()).length == 2;
     }
 
     private String getParameter(Map<String, Object> params, String paramName) {
@@ -290,68 +300,44 @@ public class PayloadValidator {
         return params;
     }
 
-    private Integer getTotalRecords(MetaPaginated meta) {
-        Field totalRecordsField = FieldUtils.getField(meta.getClass(), ConformanceUtil.getFieldName(meta, "totalRecords"), true);
-        return (Integer) ReflectionUtils.getField(totalRecordsField, meta);
+    private Integer getTotalRecords(Object meta) {
+        return getFieldValueAsInteger(meta, "totalRecords");
     }
 
-    private Integer getTotalPages(MetaPaginated meta) {
-        Field totalPagesField = FieldUtils.getField(meta.getClass(), ConformanceUtil.getFieldName(meta, "totalPages"), true);
-        return (Integer) ReflectionUtils.getField(totalPagesField, meta);
+    private Integer getTotalPages(Object meta) {
+        return getFieldValueAsInteger(meta, "totalPages");
     }
 
-    private String getFirst(LinksPaginated links) {
-        Field firstField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "first"), true);
-        return (String) ReflectionUtils.getField(firstField, links);
+    private String getFieldValueAsString(Object o, String fieldName) {
+        Field field = FieldUtils.getField(o.getClass(), ConformanceUtil.getFieldName(o, fieldName), true);
+        Object fieldValue = ReflectionUtils.getField(field, o);
+        return fieldValue == null ? null : fieldValue.toString();
     }
 
-    private String getPrev(LinksPaginated links) {
-        Field prevField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "prev"), true);
-        return (String) ReflectionUtils.getField(prevField, links);
+    private Integer getFieldValueAsInteger(Object o, String fieldName) {
+        String s = getFieldValueAsString(o, fieldName);
+        return s == null ? null : Integer.parseInt(s);
     }
 
-    private String getNext(LinksPaginated links) {
-        Field nextField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "next"), true);
-        return (String) ReflectionUtils.getField(nextField, links);
-    }
-
-    private String getLast(LinksPaginated links) {
-        Field lastField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "last"), true);
-        return (String) ReflectionUtils.getField(lastField, links);
-    }
-
-    private String getSelf(LinksPaginated links) {
-        Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "self"), true);
-        return (String) ReflectionUtils.getField(selfField, links);
-    }
-
-    private LinksPaginated getLinksPaginated(Object response) {
+    private Object getLinks(Object response) {
         Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "links"), true);
-        return (LinksPaginated) ReflectionUtils.getField(linksField, response);
+        return ReflectionUtils.getField(linksField, response);
     }
 
-    private MetaPaginated getMetaPaginated(Object response) {
+    private Object getMeta(Object response) {
         Field metaField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "meta"), true);
-        return (MetaPaginated) ReflectionUtils.getField(metaField, response);
+        return ReflectionUtils.getField(metaField, response);
     }
 
     private void checkSelfLink(String requestUrl, Object response, List<ConformanceError> errors) {
         Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "links"), true);
         Object links = ReflectionUtils.getField(linksField, response);
-        if (links == null) {
-            errors.add(new ConformanceError().errorType(ConformanceError.Type.MISSING_VALUE)
-                .errorField(linksField)
-                .dataJson(ConformanceUtil.toJson(response))
-                .errorMessage(String.format("%s\ndoes not have links data", response))
-            );
-        } else {
-            Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "self"), true);
-            String selfLink = (String) ReflectionUtils.getField(selfField, links);
+        if (links != null) {
+            String selfLink = getFieldValueAsString(links, "self");
             if (!requestUrl.equals(selfLink)) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(selfField)
-                    .dataJson(ConformanceUtil.toJson(links))
-                    .errorMessage(String.format("Self %s does not match original request url %s", selfLink, requestUrl))
+                    .errorMessage(String.format("Self %s does not match original request url %s. See below:\n%s",
+                        selfLink, requestUrl, ConformanceUtil.toJson(links)))
                 );
             }
         }
