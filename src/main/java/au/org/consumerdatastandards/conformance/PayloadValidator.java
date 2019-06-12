@@ -1,6 +1,5 @@
 package au.org.consumerdatastandards.conformance;
 
-import au.org.consumerdatastandards.api.common.models.BaseResponse;
 import au.org.consumerdatastandards.api.common.models.LinksPaginated;
 import au.org.consumerdatastandards.api.common.models.MetaPaginated;
 import au.org.consumerdatastandards.api.common.models.PaginatedResponse;
@@ -22,15 +21,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static au.org.consumerdatastandards.conformance.util.ConformanceUtil.createObjectMapper;
 
 public class PayloadValidator {
-
-    private static Integer CDS_DEFAULT_PAGE = 1, CDS_DEFAULT_PAGE_SIZE = 25;
 
     private static Logger LOGGER = LoggerFactory.getLogger(PayloadValidator.class);
 
@@ -105,182 +100,252 @@ public class PayloadValidator {
     }
 
     private List<ConformanceError> checkMetaAndLinks(String requestUrl, Object response) {
-        Integer page = CDS_DEFAULT_PAGE, pageSize = CDS_DEFAULT_PAGE_SIZE;
-        String pageParam = getParameter(requestUrl, "page");
-        if (!StringUtils.isBlank(pageParam)) page = Integer.parseInt(pageParam);
-        String pageSizeParam = getParameter(requestUrl, "page-size");
-        if (!StringUtils.isBlank(pageSizeParam)) pageSize = Integer.parseInt(pageSizeParam);
-
+        Integer page = 1, pageSize = 25;
+        Map<String, Object> params = extractParameters(requestUrl);
         List<ConformanceError> errors = new ArrayList<>();
-        if (response instanceof BaseResponse) {
-            checkSelfLink(requestUrl, response, errors);
-        } else if (response instanceof PaginatedResponse) {
+        try {
+            Integer pageParam = getPageParameter(params);
+            if (pageParam != null) page = pageParam;
+        } catch (NumberFormatException e) {
+            errors.add(new ConformanceError()
+                .errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage("Invalid 'page' parameter value " + getParameter(params, "page"))
+            );
+        }
+        try {
+            Integer pageSizeParam = getPageSizeParameter(params);
+            if (pageSizeParam != null) pageSize = pageSizeParam;
+        } catch (NumberFormatException e) {
+            errors.add(new ConformanceError()
+                .errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage("Invalid 'page-size' parameter value " + getParameter(params, "page-size"))
+            );
+        }
+        if (response instanceof PaginatedResponse) {
             MetaPaginated meta = getMetaPaginated(response);
-            LinksPaginated links = getLinksPaginated(response);
-            if (meta == null) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                    .dataJson(ConformanceUtil.toJson(response))
-                    .errorMessage(String.format("%s does not have meta data", response))
-                );
+            Integer totalRecords, totalPages = null;
+            if (meta != null) {
+                totalRecords = getTotalRecords(meta);
+                totalPages = getTotalPages(meta);
+                if (totalRecords != null && totalPages != null
+                    && (totalRecords / pageSize + (totalPages % pageSize > 0 ? 1 : 0 )!= totalPages)) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("totalPages %d does not match totalRecords / page-size + 1. See below:\n%s",
+                            totalPages, ConformanceUtil.toJson(meta)))
+                    );
+                }
             }
-            if (links == null) {
-                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                    .dataJson(ConformanceUtil.toJson(response))
-                    .errorMessage(String.format("%s does not have links data", response))
-                );
-            } else {
+            LinksPaginated links = getLinksPaginated(response);
+            if (links != null) {
+                String linksJson = ConformanceUtil.toJson(links);
                 String first = getFirst(links);
                 String prev = getPrev(links);
                 String next = getNext(links);
                 String last = getLast(links);
                 String self = getSelf(links);
-                if (StringUtils.isBlank(first)) {
+                if (StringUtils.isBlank(first) && totalPages != null && totalPages > 0) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .dataJson(ConformanceUtil.toJson(links))
-                        .errorMessage(String.format("%s\ndoes not have first link data", links))
+                        .errorMessage(String.format("first link data is missing given totalPages %d in meta. See below:\n%s",
+                            totalPages, linksJson))
                     );
-                } else {
-                    String firstLinkPageParam = getParameter(first, "page");
+                } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(first)) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("There should be no first link given totalPages %s in meta. See below:\n%s",
+                            totalPages, linksJson))
+                    );
+                } else if (!StringUtils.isBlank(first)) {
+                    Map<String, Object> firstLinkParams = extractParameters(first);
+                    String firstLinkPageParam = getParameter(firstLinkParams, "page");
                     if (!"1".equals(firstLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .dataJson(ConformanceUtil.toJson(links))
-                            .errorMessage(String.format("first link %s does not have page param value as 1", first))
+                            .errorMessage(String.format("first link %s does not have page param value as 1. See below:\n%s",
+                                first, linksJson))
                         );
                     }
-                    String firstLinkPageSizeParam = getParameter(first, "page-size");
-                    if (pageSize.toString().equals(firstLinkPageParam)) {
+                    String firstLinkPageSizeParam = getParameter(firstLinkParams, "page-size");
+                    if (!pageSize.toString().equals(firstLinkPageSizeParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .dataJson(ConformanceUtil.toJson(links))
-                            .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s", first, firstLinkPageSizeParam, pageSize))
+                            .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s. See below:\n%s",
+                                first, firstLinkPageSizeParam, pageSize, linksJson))
                         );
                     }
                 }
-                if (StringUtils.isBlank(last)) {
+                if (StringUtils.isBlank(last) && totalPages != null && totalPages > 0) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .dataJson(ConformanceUtil.toJson(links))
-                        .errorMessage(String.format("%s does not have last link data", links))
+                        .errorMessage(String.format("last link data is missing given totalPages %d in meta. See below:\n%s",
+                            totalPages, linksJson))
                     );
-                } else {
-                    String lastLinkPageParam = getParameter(last, "page");
+                } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(last)) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("There should be no last link given totalPages %s in meta. See below:\n%s",
+                            totalPages, linksJson))
+                    );
+                } else if (!StringUtils.isBlank(last)){
+                    Map<String, Object> lastLinkParams = extractParameters(last);
+                    String lastLinkPageParam = getParameter(lastLinkParams, "page");
                     if (StringUtils.isBlank(lastLinkPageParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .dataJson(ConformanceUtil.toJson(links))
-                            .errorMessage(String.format("last link %s does not have page param", last))
+                            .errorMessage(String.format("last link %s does not have page param. See below:\n%s",
+                                last, linksJson))
                         );
                     } else {
                         try {
                             Integer lastLinkPage = Integer.parseInt(lastLinkPageParam);
                             if (lastLinkPage < page) {
                                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .dataJson(ConformanceUtil.toJson(links))
-                                    .errorMessage(String.format("last link %s have invalid page param %s", last, lastLinkPage))
+                                    .errorMessage(String.format("last link %s have invalid page param %s. See below:\n%s",
+                                        last, lastLinkPage, linksJson))
                                 );
-                            } else if (lastLinkPage.equals(page)) {
-                                if (!StringUtils.isBlank(next)) {
-                                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                        .dataJson(ConformanceUtil.toJson(links))
-                                        .errorMessage(String.format("Next %s should be null as current page is the last page and there should be no next page", next))
-                                    );
-                                }
-                            } else if (StringUtils.isBlank(next)) {
+                            } else if (lastLinkPage.equals(page) && !StringUtils.isBlank(next)) {
                                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .dataJson(ConformanceUtil.toJson(links))
-                                    .errorMessage(String.format("Next link should not be null as current page %d is not the last page and there should be next page", page))
+                                    .errorMessage(String.format("Next %s should be null as current page is the last page. See below:\n%s",
+                                        next, linksJson))
+                                );
+                            } else if (lastLinkPage > page && StringUtils.isBlank(next)) {
+                                errors.add(new ConformanceError().errorType(ConformanceError.Type.MISSING_VALUE)
+                                    .errorMessage(String.format("Next link should not be null as current page %d is not the last page. See below:\n%s",
+                                        page, linksJson))
                                 );
                             }
                         } catch (NumberFormatException e) {
                             errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                .dataJson(ConformanceUtil.toJson(links))
+                                .dataJson(linksJson)
                                 .errorMessage(String.format("last link %s does not have page param", last))
                             );
                         }
                     }
-                    String lastLinkPageSizeParam = getParameter(last, "page-size");
-                    if (pageSize.toString().equals(lastLinkPageParam)) {
+                    String lastLinkPageSizeParam = getParameter(lastLinkParams, "page-size");
+                    if (!pageSize.toString().equals(lastLinkPageSizeParam)) {
                         errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .dataJson(ConformanceUtil.toJson(links))
-                            .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s", last, lastLinkPageSizeParam, pageSize))
+                            .errorMessage(String.format("last link %s page-size param value %s does not match request page-size %s. See below:\n%s",
+                                last, lastLinkPageSizeParam, pageSize, linksJson))
                         );
                     }
                 }
                 if (!requestUrl.equals(self)) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .dataJson(ConformanceUtil.toJson(links))
-                        .errorMessage(String.format("Self %s does not match request url %s", self, requestUrl))
-                    );
-                } else if (page == 1 && !StringUtils.isBlank(prev)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .dataJson(ConformanceUtil.toJson(links))
-                        .errorMessage(String.format("Prev %s should be null as current page is the first page and there should be no prev page", prev))
+                        .errorMessage(String.format("Self %s does not match request url %s. See below:\n%s",
+                            self, requestUrl, linksJson))
                     );
                 }
+                if (page == 1 && !StringUtils.isBlank(prev)) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("Prev %s should be null as current page is the first page. See below:\n%s", prev, linksJson))
+                    );
+                } else if (page > 1 && StringUtils.isBlank(prev)) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("Prev %s should be not null as current page is not the first page. See below:\n%s", prev, linksJson))
+                    );
+                } else if (page > 1 && !StringUtils.isBlank(prev)) {
+                    // TODO validate prev link
+                }
             }
-            //TODO check prev and next link and check last against meta totalRecords and totalPages and refactoring
+        } else {
+            checkSelfLink(requestUrl, response, errors);
         }
         return errors;
     }
 
-    private String getParameter(String url, String paramName) {
+    private String getParameter(Map<String, Object> params, String paramName) {
+        if (params == null || params.get(paramName) == null) return null;
+        return params.get(paramName).toString();
+    }
+
+    private Integer getIntParameter(Map<String, Object> params, String paramName) {
+        String s = getParameter(params, paramName);
+        if (StringUtils.isBlank(s)) return null;
+        return Integer.parseInt(s);
+    }
+
+    private Integer getPageParameter(Map<String, Object> params) {
+        return getIntParameter(params, "page");
+    }
+
+    private Integer getPageSizeParameter(Map<String, Object> params) {
+        return getIntParameter(params, "page-size");
+    }
+
+    private Map<String, Object> extractParameters(String url) {
         String[] parts = url.split("\\?");
         if (parts.length < 2) return null;
         String queryString = parts[1];
+        Map<String, Object> params = new HashMap<>();
         String[] queryParams = queryString.split("&");
         for (String queryParam : queryParams) {
             String[] keyValue = queryParam.split("=");
-            if (keyValue[0].equalsIgnoreCase(paramName)) {
-                if (keyValue.length < 2) return null;
-                return keyValue[1];
+            String key = keyValue[0];
+            Object value = keyValue.length > 1 ? keyValue[1] : Boolean.TRUE;
+            if (params.containsKey(key)) {
+                if (params.get(key) instanceof List) {
+                    ((List) params.get(key)).add(value);
+                } else {
+                    List<Object> valueList = new ArrayList<>();
+                    valueList.add(params.get(key));
+                    valueList.add(value);
+                }
+            } else {
+                params.put(key, value);
             }
         }
-        return null;
+        return params;
+    }
+
+    private Integer getTotalRecords(MetaPaginated meta) {
+        Field totalRecordsField = FieldUtils.getField(meta.getClass(), ConformanceUtil.getFieldName(meta, "totalRecords"), true);
+        return (Integer) ReflectionUtils.getField(totalRecordsField, meta);
+    }
+
+    private Integer getTotalPages(MetaPaginated meta) {
+        Field totalPagesField = FieldUtils.getField(meta.getClass(), ConformanceUtil.getFieldName(meta, "totalPages"), true);
+        return (Integer) ReflectionUtils.getField(totalPagesField, meta);
     }
 
     private String getFirst(LinksPaginated links) {
-        Field firstField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"first"), true);
+        Field firstField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "first"), true);
         return (String) ReflectionUtils.getField(firstField, links);
     }
 
     private String getPrev(LinksPaginated links) {
-        Field prevField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"prev"), true);
+        Field prevField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "prev"), true);
         return (String) ReflectionUtils.getField(prevField, links);
     }
 
     private String getNext(LinksPaginated links) {
-        Field nextField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"next"), true);
+        Field nextField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "next"), true);
         return (String) ReflectionUtils.getField(nextField, links);
     }
 
     private String getLast(LinksPaginated links) {
-        Field lastField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"last"), true);
+        Field lastField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "last"), true);
         return (String) ReflectionUtils.getField(lastField, links);
     }
 
     private String getSelf(LinksPaginated links) {
-        Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"self"), true);
+        Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "self"), true);
         return (String) ReflectionUtils.getField(selfField, links);
     }
 
     private LinksPaginated getLinksPaginated(Object response) {
-        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"links"), true);
+        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "links"), true);
         return (LinksPaginated) ReflectionUtils.getField(linksField, response);
     }
 
     private MetaPaginated getMetaPaginated(Object response) {
-        Field metaField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"meta"), true);
+        Field metaField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "meta"), true);
         return (MetaPaginated) ReflectionUtils.getField(metaField, response);
     }
 
     private void checkSelfLink(String requestUrl, Object response, List<ConformanceError> errors) {
-        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response,"links"), true);
+        Field linksField = FieldUtils.getField(response.getClass(), ConformanceUtil.getFieldName(response, "links"), true);
         Object links = ReflectionUtils.getField(linksField, response);
         if (links == null) {
-            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.MISSING_VALUE)
                 .errorField(linksField)
                 .dataJson(ConformanceUtil.toJson(response))
                 .errorMessage(String.format("%s\ndoes not have links data", response))
             );
         } else {
-            Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links,"self"), true);
+            Field selfField = FieldUtils.getField(links.getClass(), ConformanceUtil.getFieldName(links, "self"), true);
             String selfLink = (String) ReflectionUtils.getField(selfField, links);
             if (!requestUrl.equals(selfLink)) {
                 errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
