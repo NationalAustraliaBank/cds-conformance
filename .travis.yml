@@ -6,7 +6,9 @@ jdk:
 cache:
   directories:
     - $HOME/.m2
-    
+
+script: mvn test -B -Ddocker.skip=false
+
 before_install:
   - test $TRAVIS_BRANCH != "master" && .travis/install-branch-dependencies.sh || true
   - test $TRAVIS_PULL_REQUEST && .travis/install-branch-dependencies.sh || true

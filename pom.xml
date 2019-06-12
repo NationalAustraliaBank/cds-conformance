@@ -39,7 +39,8 @@
         <serenity.version>2.0.50</serenity.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <dockerfile-maven-version>1.4.10</dockerfile-maven-version>        
+	<dockerfile-maven-version>1.4.10</dockerfile-maven-version>
+	<docker.skip>true</docker.skip>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -118,8 +119,9 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <repository>consumerdatastandardsaustralia/cds-discovery</repository>
+		<configuration>
+			<skip>${docker.skip}</skip>
+                    <repository>consumerdatastandardsaustralia/cds-conformance</repository>
                     <tag>${project.version}</tag>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>

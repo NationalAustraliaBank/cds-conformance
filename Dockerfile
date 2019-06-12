@@ -10,8 +10,8 @@ WORKDIR /opt/cds-conformance
 RUN apt-get update
 RUN apt-get -y install maven dumb-init
 
-RUN mvn -q -Ddockerfile.skip=true -DskipTests=true clean package
-RUN mvn -q -Ddockerfile.skip=true verify || true
+RUN mvn -q -DskipTests=true clean package
+RUN mvn -q verify || true
 
 RUN chmod +x /opt/cds-conformance/support/docker-init.sh
 
