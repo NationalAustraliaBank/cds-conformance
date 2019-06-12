@@ -4,13 +4,13 @@ import au.org.consumerdatastandards.codegen.model.EndpointModel;
 
 public class Payload {
 
-    private PayloadType payloadType;
+    private Type payloadType;
 
     private Class<?> dataClass;
 
     private EndpointModel endpointModel;
 
-    public void setPayloadType(PayloadType payloadType) {
+    public void setPayloadType(Type payloadType) {
         this.payloadType = payloadType;
     }
 
@@ -30,5 +30,14 @@ public class Payload {
         return payloadType.toString() +
             " in endpoint (" + endpointModel.getEndpoint().operationId()  + ") "
             + endpointModel.getEndpoint().path();
+    }
+
+    public enum Type {
+
+        REQUEST_BODY,
+
+        RESPONSE_BODY,
+
+        EMBEDDED_DATA
     }
 }

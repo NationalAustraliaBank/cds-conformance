@@ -5,5 +5,10 @@
             <username>${env.OSSRH_USER}</username>
             <password>${env.OSSRH_PASS}</password>
         </server>
+        <server>
+            <id>docker.io</id>
+            <username>${env.DOCKERHUB_USER}</username>
+            <password>${env.DOCKERHUB_PASS}</password>
+        </server>
     </servers>
 </settings>

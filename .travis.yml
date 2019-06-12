@@ -7,6 +7,10 @@ cache:
   directories:
     - $HOME/.m2
     
+before_install:
+  - test $TRAVIS_BRANCH != "master" && .travis/install-branch-dependencies.sh || true
+  - test $TRAVIS_PULL_REQUEST && .travis/install-branch-dependencies.sh || true
+  
 after_success:
-  - test $TRAVIS_BRANCH == "master" && test $TRAVIS_PULL_REQUEST == "false" && mvn deploy --settings .travis/snapshot-dispatch-settings.xml
+  - test $TRAVIS_BRANCH == "master" && test $TRAVIS_PULL_REQUEST == "false" && mvn deploy -q --settings .travis/snapshot-dispatch-settings.xml
 
