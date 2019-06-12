@@ -30,6 +30,8 @@ import static au.org.consumerdatastandards.conformance.util.ConformanceUtil.crea
 
 public class PayloadValidator {
 
+    private static Integer CDS_DEFAULT_PAGE = 1, CDS_DEFAULT_PAGE_SIZE = 25;
+
     private static Logger LOGGER = LoggerFactory.getLogger(PayloadValidator.class);
 
     private ConformanceModel conformanceModel;
@@ -103,7 +105,7 @@ public class PayloadValidator {
     }
 
     private List<ConformanceError> checkMetaAndLinks(String requestUrl, Object response) {
-        Integer page = 1, pageSize = 25;
+        Integer page = CDS_DEFAULT_PAGE, pageSize = CDS_DEFAULT_PAGE_SIZE;
         String pageParam = getParameter(requestUrl, "page");
         if (!StringUtils.isBlank(pageParam)) page = Integer.parseInt(pageParam);
         String pageSizeParam = getParameter(requestUrl, "page-size");

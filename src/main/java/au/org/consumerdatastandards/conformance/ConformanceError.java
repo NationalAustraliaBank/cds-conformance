@@ -54,7 +54,7 @@ public class ConformanceError {
     public String getDescription() {
         switch (errorType) {
             case MISSING_VALUE:
-                return String.format("Required field '%s' has NULL value in\n%s", 
+                return String.format("Required field '%s' has null value in\n%s",
                     errorField.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, ""), dataJson);
             case MISSING_PROPERTY:
                 return String.format("Required field '%s' is missing in\n%s",

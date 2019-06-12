@@ -243,11 +243,18 @@ public class ConformanceUtil {
     }
 
     public static Class<?> expandModel(Class<?> modelClass) {
-        DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
-        if (dataDefinition != null && dataDefinition.allOf().length > 0) {
-            return ConformanceUtil.combine(modelClass, dataDefinition.allOf());
+        if (allOfExists(modelClass)) {
+            DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
+            if (dataDefinition != null && dataDefinition.allOf().length > 0) {
+                return ConformanceUtil.combine(modelClass, dataDefinition.allOf());
+            } else {
+                final BeanGenerator beanGenerator = new BeanGenerator();
+                beanGenerator.setNamingPolicy((s, s1, o, predicate) -> modelClass.getName() + GENERATED_CLASS_SUFFIX);
+                addProperties(beanGenerator, modelClass);
+                return (Class<?>) beanGenerator.createClass();
+            }
         } else {
-            return expandIfRequired(modelClass);
+            return modelClass;
         }
     }
 
@@ -261,25 +268,17 @@ public class ConformanceUtil {
         return (Class<?>) beanGenerator.createClass();
     }
 
-    private static Class<?> expandIfRequired(Class<?> modelClass) {
-        if (allOfExists(modelClass)) {
-            final BeanGenerator beanGenerator = new BeanGenerator();
-            beanGenerator.setNamingPolicy((s, s1, o, predicate) -> modelClass.getName() + GENERATED_CLASS_SUFFIX);
-            addProperties(beanGenerator, modelClass);
-            return (Class<?>) beanGenerator.createClass();
-        } else {
-            return modelClass;
-        }
+    private static boolean isCDSModel(Class<?> modelClass) {
+        return modelClass.getName().startsWith("au.org.consumerdatastandards");
     }
 
     private static boolean allOfExists(Class<?> modelClass) {
-        if (!modelClass.getName().startsWith("au.org.consumerdatastandards") || modelClass.isEnum()) return false;
+        if (modelClass.isEnum() || !isCDSModel(modelClass)) return false;
         DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
         if (dataDefinition != null && dataDefinition.allOf().length > 0) {
             return true;
         }
         Field[] allFields = FieldUtils.getAllFields(modelClass);
-        if (allFields.length == 0) return false;
         for (Field field : allFields) {
             if (ReflectionUtil.isSetOrList(field.getType())) {
                 Class<?> itemType = ReflectionUtil.getItemType(field.getType(), field.getGenericType());
@@ -324,7 +323,7 @@ public class ConformanceUtil {
     }
 
     public static String getFieldName(Object dataObject, String originalFieldName) {
-        if (dataObject.getClass().getSimpleName().endsWith(GENERATED_CLASS_SUFFIX)) {
+        if (isGeneratedClass(dataObject.getClass())) {
             return GENERATED_PROPERTY_PREFIX + originalFieldName;
         }
         return originalFieldName;
