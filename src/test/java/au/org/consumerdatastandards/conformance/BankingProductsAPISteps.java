@@ -129,9 +129,11 @@ public class BankingProductsAPISteps {
                     }
                 }
                 for (ConformanceError error : conformanceErrors) {
+                    logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                     logger.error(error.getDescription());
                 }
-                assertTrue("Conformance errors found in response payload", conformanceErrors.isEmpty());
+                assertTrue("Conformance errors found in response payload" + buildConformanceErrorsDescription(conformanceErrors),
+                    conformanceErrors.isEmpty());
             } catch (IOException e) {
                 fail(e.getMessage());
             }
@@ -297,6 +299,7 @@ public class BankingProductsAPISteps {
     @Step("Request /banking/products/{productId}")
     void getProductDetail(String productId) {
         String url = apiBasePath + "/banking/products/" + productId;
+        requestUrl = url;
         getProductDetailResponse = given().accept(ContentType.JSON).when().get(url).then().log().body().extract().response();
     }
 
@@ -328,6 +331,7 @@ public class BankingProductsAPISteps {
                     );
                 }
                 for (ConformanceError error : conformanceErrors) {
+                    logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                     logger.error(error.getDescription());
                 }
                 String message = "Conformance errors found in response payload: " + buildConformanceErrorsDescription(conformanceErrors);
