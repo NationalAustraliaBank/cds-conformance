@@ -1,7 +1,6 @@
 package au.org.consumerdatastandards.conformance;
 
 import net.serenitybdd.junit.runners.SerenityParameterizedRunner;
-import net.thucydides.core.ThucydidesSystemProperty;
 import net.thucydides.core.annotations.Steps;
 import net.thucydides.core.util.EnvironmentVariables;
 import net.thucydides.core.util.SystemEnvironmentVariables;
@@ -16,6 +15,8 @@ import java.util.List;
 @UseTestDataFrom("testdata/banking-products-api-params.csv")
 @RunWith(SerenityParameterizedRunner.class)
 public class BankingProductsAPITest {
+
+    private static String DEFAULT_API_BASE = "http://localhost:8080/cds-au/v1";
 
     private String effective;
     private String updatedSince;
@@ -33,6 +34,8 @@ public class BankingProductsAPITest {
         String apiBasePath = variables.getProperty("apiBase");
         if (!StringUtils.isBlank(apiBasePath)) {
             steps.setupApiBasePath(apiBasePath);
+        } else {
+            steps.setupApiBasePath(DEFAULT_API_BASE);
         }
     }
 

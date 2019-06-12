@@ -33,7 +33,7 @@ public class BankingProductsAPISteps {
 
     private PayloadValidator payloadValidator = new PayloadValidator();
 
-    private String apiBasePath = "http://localhost:8080/cds-au/v1";
+    private String apiBasePath;
 
     private Response listProductsResponse;
 
@@ -48,7 +48,7 @@ public class BankingProductsAPISteps {
         this.apiBasePath = apiBasePath;
     }
 
-    @Step("Call listProducts")
+    @Step("Request /banking/products")
     void listProducts(String effective,
                       String updatedSince,
                       String brand,
@@ -92,7 +92,7 @@ public class BankingProductsAPISteps {
         listProductsResponse = given.when().get(url).then().log().all().extract().response();
     }
 
-    @Step("Validate listProducts response")
+    @Step("Validate /banking/products response")
     void validateListProductsResponse(String effective,
                                       String updatedSince,
                                       String brand,
@@ -294,13 +294,13 @@ public class BankingProductsAPISteps {
         return null;
     }
 
-    @Step("Call getProductDetail")
+    @Step("Request /banking/products/{productId}")
     void getProductDetail(String productId) {
         String url = apiBasePath + "/banking/products/" + productId;
         getProductDetailResponse = given().accept(ContentType.JSON).when().get(url).then().log().body().extract().response();
     }
 
-    @Step("Validate getProductDetail response")
+    @Step("Validate /banking/products/{productId} response")
     void validateGetProductDetailResponse(String productId) {
         int statusCode = getProductDetailResponse.statusCode();
         if (!productId.matches(CustomDataType.ASCII.getPattern())) {
