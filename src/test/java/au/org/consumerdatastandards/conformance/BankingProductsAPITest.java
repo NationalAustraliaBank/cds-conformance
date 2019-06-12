@@ -37,7 +37,7 @@ public class BankingProductsAPITest {
     }
 
     @Test
-    public void listAndGet() {
+    public void listProductsAndGetProductDetail() {
         steps.listProducts(effective, updatedSince, brand, productCategory, page, pageSize);
         steps.validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize);
         List<String> productIds = steps.getProductIds();
