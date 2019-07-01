@@ -58,7 +58,7 @@ public class BankingProductsAPISteps {
         String url = apiBasePath + "/banking/products";
         requestUrl = url;
         boolean paramAdded = false;
-        RequestSpecification given = given().accept(ContentType.JSON);
+        RequestSpecification given = given().header("Accept", "application/json");
         if (!StringUtils.isBlank(effective)) {
             given.queryParam("effective", effective);
             requestUrl += "?effective=" + effective;
@@ -91,14 +91,35 @@ public class BankingProductsAPISteps {
 
         listProductsResponse = given.when().get(url).then().log().all().extract().response();
     }
-
-    @Step("Validate /banking/products response")
+    
+    
+    @Step("Validate /banking/products response with fuzzy acceptance")
+    void validateListProductsResponse(String effective,
+            String updatedSince,
+            String brand,
+            String productCategory,
+            Integer page,
+            Integer pageSize) {
+        validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, true);
+    }
+    
+    @Step("Validate /banking/products response with strict acceptance verification")
+    void validateListProductsResponseStrict(String effective,
+            String updatedSince,
+            String brand,
+            String productCategory,
+            Integer page,
+            Integer pageSize) {
+        validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, false);
+    }
+    
     void validateListProductsResponse(String effective,
                                       String updatedSince,
                                       String brand,
                                       String productCategory,
                                       Integer page,
-                                      Integer pageSize) {
+                                      Integer pageSize,
+                                      Boolean fuzzyAccept) {
         boolean paramsValid = validateListProductsParams(effective, updatedSince, productCategory, page, pageSize);
         int statusCode = listProductsResponse.statusCode();
         if (!paramsValid) {
@@ -132,8 +153,11 @@ public class BankingProductsAPISteps {
                     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                     logger.error(error.getDescription());
                 }
-                assertTrue("Conformance errors found in response payload" + buildConformanceErrorsDescription(conformanceErrors),
-                    conformanceErrors.isEmpty());
+                
+                if(!fuzzyAccept) {
+                  assertTrue("Conformance errors found in response payload" + buildConformanceErrorsDescription(conformanceErrors),
+                      conformanceErrors.isEmpty());
+                }
             } catch (IOException e) {
                 fail(e.getMessage());
             }
@@ -300,7 +324,7 @@ public class BankingProductsAPISteps {
     void getProductDetail(String productId) {
         String url = apiBasePath + "/banking/products/" + productId;
         requestUrl = url;
-        getProductDetailResponse = given().accept(ContentType.JSON).when().get(url).then().log().body().extract().response();
+        getProductDetailResponse = given().header("Accept", "application/json").when().get(url).then().log().body().extract().response();
     }
 
     @Step("Validate /banking/products/{productId} response")
