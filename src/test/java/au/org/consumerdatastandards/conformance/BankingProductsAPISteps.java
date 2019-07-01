@@ -49,12 +49,8 @@ public class BankingProductsAPISteps {
     }
 
     @Step("Request /banking/products")
-    void listProducts(String effective,
-                      String updatedSince,
-                      String brand,
-                      String productCategory,
-                      Integer page,
-                      Integer pageSize) {
+    void listProducts(String effective, String updatedSince, String brand, String productCategory, Integer page,
+            Integer pageSize) {
         String url = apiBasePath + "/banking/products";
         requestUrl = url;
         boolean paramAdded = false;
@@ -91,35 +87,21 @@ public class BankingProductsAPISteps {
 
         listProductsResponse = given.when().get(url).then().log().all().extract().response();
     }
-    
-    
+
     @Step("Validate /banking/products response with fuzzy acceptance")
-    void validateListProductsResponse(String effective,
-            String updatedSince,
-            String brand,
-            String productCategory,
-            Integer page,
-            Integer pageSize) {
+    void validateListProductsResponse(String effective, String updatedSince, String brand, String productCategory,
+            Integer page, Integer pageSize) {
         validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, true);
     }
-    
+
     @Step("Validate /banking/products response with strict acceptance verification")
-    void validateListProductsResponseStrict(String effective,
-            String updatedSince,
-            String brand,
-            String productCategory,
-            Integer page,
-            Integer pageSize) {
+    void validateListProductsResponseStrict(String effective, String updatedSince, String brand, String productCategory,
+            Integer page, Integer pageSize) {
         validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, false);
     }
-    
-    void validateListProductsResponse(String effective,
-                                      String updatedSince,
-                                      String brand,
-                                      String productCategory,
-                                      Integer page,
-                                      Integer pageSize,
-                                      Boolean fuzzyAccept) {
+
+    void validateListProductsResponse(String effective, String updatedSince, String brand, String productCategory,
+            Integer page, Integer pageSize, Boolean fuzzyAccept) {
         boolean paramsValid = validateListProductsParams(effective, updatedSince, productCategory, page, pageSize);
         int statusCode = listProductsResponse.statusCode();
         if (!paramsValid) {
@@ -130,9 +112,9 @@ public class BankingProductsAPISteps {
             String contentType = listProductsResponse.contentType();
             if (contentType == null) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorMessage("missing content-type application/json in response header"));
+                        .errorMessage("missing content-type application/json in response header"));
             } else {
-                if(!contentType.startsWith("application/json")) {
+                if (!contentType.startsWith("application/json")) {
                     conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                             .errorMessage(String.format("invalid content-type of %s specified", contentType)));
                 }
@@ -141,22 +123,26 @@ public class BankingProductsAPISteps {
             ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
             try {
                 responseBankingProductList = objectMapper.readValue(json, ResponseBankingProductList.class);
-                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductList, "listProducts", statusCode));
+                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductList,
+                        "listProducts", statusCode));
                 ResponseBankingProductListData data = getProductListData(responseBankingProductList);
                 List<BankingProduct> products = getProducts(data);
                 if (products != null && !products.isEmpty()) {
                     for (BankingProduct bankingProduct : products) {
-                        conformanceErrors.addAll(checkDataAgainstCriteria(bankingProduct, effective, updatedSince, brand, productCategory));
+                        conformanceErrors.addAll(checkDataAgainstCriteria(bankingProduct, effective, updatedSince,
+                                brand, productCategory));
                     }
                 }
                 for (ConformanceError error : conformanceErrors) {
                     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                     logger.error(error.getDescription());
                 }
-                
-                if(!fuzzyAccept) {
-                  assertTrue("Conformance errors found in response payload" + buildConformanceErrorsDescription(conformanceErrors),
-                      conformanceErrors.isEmpty());
+
+                if (!fuzzyAccept) {
+                    assertTrue(
+                            "Conformance errors found in response payload"
+                                    + buildConformanceErrorsDescription(conformanceErrors),
+                            conformanceErrors.isEmpty());
                 }
             } catch (IOException e) {
                 fail(e.getMessage());
@@ -164,7 +150,8 @@ public class BankingProductsAPISteps {
         }
     }
 
-    private List<ConformanceError> checkDataAgainstCriteria(BankingProduct bankingProduct, String effective, String updatedSince, String brand, String productCategory) {
+    private List<ConformanceError> checkDataAgainstCriteria(BankingProduct bankingProduct, String effective,
+            String updatedSince, String brand, String productCategory) {
         List<ConformanceError> errors = new ArrayList<>();
         checkEffectiveDate(bankingProduct, effective, errors);
         checkUpdatedSince(bankingProduct, updatedSince, errors);
@@ -173,15 +160,17 @@ public class BankingProductsAPISteps {
         return errors;
     }
 
-    private void checkProductCategory(BankingProduct bankingProduct, String productCategory, List<ConformanceError> errors) {
+    private void checkProductCategory(BankingProduct bankingProduct, String productCategory,
+            List<ConformanceError> errors) {
         if (!StringUtils.isBlank(productCategory)) {
             BankingEnumProductCategory bankingProductCategory = getProductCategory(bankingProduct);
             if (bankingProductCategory == null || !bankingProductCategory.name().equals(productCategory)) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct productCategory %s does not match productCategory query %s", bankingProductCategory, productCategory))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct))
+                        .errorMessage(String.format(
+                                "BankingProduct productCategory %s does not match productCategory query %s",
+                                bankingProductCategory, productCategory)));
             }
         }
     }
@@ -196,10 +185,9 @@ public class BankingProductsAPISteps {
             String productBrand = getProductBrand(bankingProduct);
             if (StringUtils.isBlank(productBrand) || !productBrand.contains(brand)) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct brand %s does not match brand query %s", productBrand, brand))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct)).errorMessage(String
+                                .format("BankingProduct brand %s does not match brand query %s", productBrand, brand)));
             }
         }
     }
@@ -215,10 +203,10 @@ public class BankingProductsAPISteps {
             DateTime lastUpdatedTime = getLastUpdatedTime(bankingProduct);
             if (updatedSinceTime.getValue() > lastUpdatedTime.getValue()) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct lastUpdated %s is before updatedSince %s", lastUpdatedTime, updatedSinceTime))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct))
+                        .errorMessage(String.format("BankingProduct lastUpdated %s is before updatedSince %s",
+                                lastUpdatedTime, updatedSinceTime)));
             }
         }
     }
@@ -230,7 +218,8 @@ public class BankingProductsAPISteps {
     private DateTime getDateTimeFieldValue(Object dataObject, String fieldName) {
         Field dataField = FieldUtils.getField(dataObject.getClass(), fieldName, true);
         String fieldValue = (String) ReflectionUtils.getField(dataField, dataObject);
-        if (StringUtils.isBlank(fieldValue)) return null;
+        if (StringUtils.isBlank(fieldValue))
+            return null;
         return DateTime.parseRfc3339(fieldValue);
     }
 
@@ -241,26 +230,26 @@ public class BankingProductsAPISteps {
         if (StringUtils.isBlank(effective) || effective.equals(ParamEffective.CURRENT.name())) {
             if (effectiveFromDate != null && effectiveFromDate.getValue() > now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct effectiveFrom %s is after current time %s", effectiveFromDate, new Date(now)))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct))
+                        .errorMessage(String.format("BankingProduct effectiveFrom %s is after current time %s",
+                                effectiveFromDate, new Date(now))));
             }
             if (effectiveToDate != null && effectiveToDate.getValue() < now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveTo", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct effectiveTo %s is before current time %s", effectiveFromDate, new Date(now)))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveTo", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct))
+                        .errorMessage(String.format("BankingProduct effectiveTo %s is before current time %s",
+                                effectiveFromDate, new Date(now))));
             }
         }
         if (ParamEffective.FUTURE.name().equals(effective)) {
             if (effectiveFromDate == null || effectiveFromDate.getValue() <= now) {
                 errors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
-                    .dataJson(ConformanceUtil.toJson(bankingProduct))
-                    .errorMessage(String.format("BankingProduct effectiveFrom %s is not after current time %s", effectiveFromDate, new Date(now)))
-                );
+                        .errorField(FieldUtils.getField(BankingProduct.class, "effectiveFrom", true))
+                        .dataJson(ConformanceUtil.toJson(bankingProduct))
+                        .errorMessage(String.format("BankingProduct effectiveFrom %s is not after current time %s",
+                                effectiveFromDate, new Date(now))));
             }
         }
     }
@@ -273,7 +262,8 @@ public class BankingProductsAPISteps {
         return getDateTimeFieldValue(bankingProduct, "effectiveTo");
     }
 
-    private boolean validateListProductsParams(String effective, String updatedSince, String productCategory, Integer page, Integer pageSize) {
+    private boolean validateListProductsParams(String effective, String updatedSince, String productCategory,
+            Integer page, Integer pageSize) {
         if (!StringUtils.isBlank(effective)) {
             try {
                 ParamEffective.valueOf(effective);
@@ -305,7 +295,12 @@ public class BankingProductsAPISteps {
 
     private List<BankingProduct> getProducts(ResponseBankingProductListData productListData) {
         Field dataField = FieldUtils.getField(ResponseBankingProductListData.class, "products", true);
-        return (List<BankingProduct>) ReflectionUtils.getField(dataField, productListData);
+        try {
+            return (List<BankingProduct>) ReflectionUtils.getField(dataField, productListData);
+        } catch(NullPointerException e) {
+            // Empty responses is ok?
+            return new ArrayList<BankingProduct>();
+        }
     }
 
     public List<String> getProductIds() {
@@ -324,7 +319,8 @@ public class BankingProductsAPISteps {
     void getProductDetail(String productId) {
         String url = apiBasePath + "/banking/products/" + productId;
         requestUrl = url;
-        getProductDetailResponse = given().header("Accept", "application/json").when().get(url).then().log().body().extract().response();
+        getProductDetailResponse = given().header("Accept", "application/json").when().get(url).then().log().body()
+                .extract().response();
     }
 
     @Step("Validate /banking/products/{productId} response")
@@ -338,27 +334,28 @@ public class BankingProductsAPISteps {
             String contentType = getProductDetailResponse.contentType();
             if (!"application/json".equals(contentType)) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                    .errorMessage("missing content-type application/json in response header"));
+                        .errorMessage("missing content-type application/json in response header"));
             }
             String json = getProductDetailResponse.getBody().asString();
             ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
             try {
                 Class<?> expandedResponseClass = ConformanceUtil.expandModel(ResponseBankingProductById.class);
                 Object responseBankingProductById = objectMapper.readValue(json, expandedResponseClass);
-                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductById, "getProductDetail", statusCode));
+                conformanceErrors.addAll(payloadValidator.validateResponse(this.requestUrl, responseBankingProductById,
+                        "getProductDetail", statusCode));
                 Object data = getBankingProductDetail(responseBankingProductById);
                 String id = getProductId(data);
                 if (!id.equals(productId)) {
                     conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                        .dataJson(ConformanceUtil.toJson(responseBankingProductById))
-                        .errorMessage(String.format("Response productId %s does not match request productId %s", id, productId))
-                    );
+                            .dataJson(ConformanceUtil.toJson(responseBankingProductById)).errorMessage(String.format(
+                                    "Response productId %s does not match request productId %s", id, productId)));
                 }
                 for (ConformanceError error : conformanceErrors) {
                     logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                     logger.error(error.getDescription());
                 }
-                String message = "Conformance errors found in response payload: " + buildConformanceErrorsDescription(conformanceErrors);
+                String message = "Conformance errors found in response payload: "
+                        + buildConformanceErrorsDescription(conformanceErrors);
                 assertTrue(message, conformanceErrors.isEmpty());
             } catch (IOException e) {
                 fail(e.getMessage());
@@ -381,9 +378,9 @@ public class BankingProductsAPISteps {
     }
 
     private String getProductId(Object data) {
-        String idFieldName = ConformanceUtil.getFieldName(data,"productId");
+        String idFieldName = ConformanceUtil.getFieldName(data, "productId");
         Field idField = FieldUtils.getField(data.getClass(), idFieldName, true);
-        return (String)ReflectionUtils.getField(idField, data);
+        return (String) ReflectionUtils.getField(idField, data);
     }
 
     public ResponseBankingProductList getResponseBankingProductList() {

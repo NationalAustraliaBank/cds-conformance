@@ -15,6 +15,9 @@ do
                 -b=*)
                     TARGET_URI=`echo $i | sed 's/[-a-zA-Z0-9\.]*=//'`
                 ;;
+                -s)
+                    SERVE_CONTENT=true
+                ;;
 		*)
 		;;
 	esac
@@ -44,5 +47,10 @@ else
 fi
 
 cd target/site/serenity
-python -m SimpleHTTPServer
+if [ -z "$SERVE_CONTENT" ]
+then
+    echo "Content written to `pwd`"
+else
+    python -m SimpleHTTPServer
+fi
 
