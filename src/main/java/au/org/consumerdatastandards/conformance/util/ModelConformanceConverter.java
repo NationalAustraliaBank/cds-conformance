@@ -7,7 +7,6 @@ import au.org.consumerdatastandards.codegen.model.SectionModel;
 import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.ConformanceModel;
 import au.org.consumerdatastandards.conformance.Payload;
-import au.org.consumerdatastandards.conformance.PayloadType;
 import au.org.consumerdatastandards.support.EndpointResponse;
 import au.org.consumerdatastandards.support.ResponseCode;
 import au.org.consumerdatastandards.support.data.DataDefinition;
@@ -31,16 +30,7 @@ public class ModelConformanceConverter {
         }
         conformanceModel.setResponseMap(responseMap);
         conformanceModel.setPayloadMap(payloadMap);
-        conformanceModel.setNameClassMap(mapClassByName(payloadMap.keySet()));
         return conformanceModel;
-    }
-
-    private static TreeMap<String, Class<?>> mapClassByName(Set<Class<?>> classes) {
-        TreeMap<String, Class<?>> classMap = new TreeMap<>();
-        for (Class<?> clazz: classes) {
-            classMap.put(clazz.getSimpleName(), clazz);
-        }
-        return classMap;
     }
 
     private static void add(EndpointModel endpointModel,
@@ -66,7 +56,7 @@ public class ModelConformanceConverter {
         for (ParamModel bodyParam : bodyParams) {
             Payload payload = new Payload();
             payload.setDataClass(getPayloadDataClass(bodyParam.getParamDataType()));
-            payload.setPayloadType(PayloadType.REQUEST_BODY);
+            payload.setPayloadType(Payload.Type.REQUEST_BODY);
             payload.setEndpointModel(endpointModel);
             payloadMap.put(bodyParam.getParamDataType(), payload);
             processDataDefinition(endpointModel, bodyParam.getParamDataType(), payloadMap, processedClasses);
@@ -80,7 +70,7 @@ public class ModelConformanceConverter {
         if (!response.content().equals(Void.class)) {
             Payload payload = new Payload();
             payload.setDataClass(getPayloadDataClass(response.content()));
-            payload.setPayloadType(PayloadType.RESPONSE_BODY);
+            payload.setPayloadType(Payload.Type.RESPONSE_BODY);
             payload.setEndpointModel(endpointModel);
             payloadMap.put(response.content(), payload);
             processDataDefinition(endpointModel, response.content(), payloadMap, processedClasses);
@@ -127,7 +117,7 @@ public class ModelConformanceConverter {
         if (payloadMap.get(dataType) == null) {
             Payload payload = new Payload();
             payload.setDataClass(getPayloadDataClass(dataType));
-            payload.setPayloadType(PayloadType.EMBEDDED_DATA);
+            payload.setPayloadType(Payload.Type.EMBEDDED_DATA);
             payload.setEndpointModel(endpointModel);
             payloadMap.put(dataType, payload);
         }
@@ -140,18 +130,13 @@ public class ModelConformanceConverter {
         if (payloadMap.get(arrayType) == null) {
             Payload payload = new Payload();
             payload.setDataClass(generatedArrayType);
-            payload.setPayloadType(PayloadType.EMBEDDED_DATA);
+            payload.setPayloadType(Payload.Type.EMBEDDED_DATA);
             payload.setEndpointModel(endpointModel);
             payloadMap.put(arrayType, payload);
         }
     }
 
     private static Class<?> getPayloadDataClass(Class<?> dataType) {
-        DataDefinition dataDefinition = dataType.getAnnotation(DataDefinition.class);
-        if (dataDefinition != null && dataDefinition.allOf().length > 0) {
-            return ConformanceUtil.combine(dataType, dataDefinition.allOf());
-        }
-        return dataType;
+        return ConformanceUtil.expandModel(dataType);
     }
-
 }

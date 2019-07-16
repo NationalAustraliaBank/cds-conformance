@@ -19,7 +19,7 @@ public class CglibBeanDeserializerModifier extends BeanDeserializerModifier {
         if (beanDesc.getBeanClass().getSimpleName().endsWith(ConformanceUtil.GENERATED_CLASS_SUFFIX)) {
             List<BeanPropertyDefinition> renamedPropDefs = new ArrayList<>();
             for(BeanPropertyDefinition propDef : propDefs) {
-                renamedPropDefs.add(propDef.withSimpleName(propDef.getName().replace("$cglib_prop_", "")));
+                renamedPropDefs.add(propDef.withSimpleName(propDef.getName().replace(ConformanceUtil.GENERATED_PROPERTY_PREFIX, "")));
             }
             return renamedPropDefs;
         }
