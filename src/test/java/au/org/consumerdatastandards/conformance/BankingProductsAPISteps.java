@@ -6,7 +6,6 @@ import au.org.consumerdatastandards.support.ResponseCode;
 import au.org.consumerdatastandards.support.data.CustomDataType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.DateTime;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import net.thucydides.core.annotations.Step;
@@ -54,7 +53,9 @@ public class BankingProductsAPISteps {
         String url = apiBasePath + "/banking/products";
         requestUrl = url;
         boolean paramAdded = false;
-        RequestSpecification given = given().header("Accept", "application/json");
+        RequestSpecification given = given()
+            .header("Accept", "application/json")
+            .header("x-v", 1);
         if (!StringUtils.isBlank(effective)) {
             given.queryParam("effective", effective);
             requestUrl += "?effective=" + effective;
