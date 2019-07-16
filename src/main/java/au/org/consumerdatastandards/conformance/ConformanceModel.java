@@ -5,7 +5,6 @@ import au.org.consumerdatastandards.support.ResponseCode;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 public class ConformanceModel {
 

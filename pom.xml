@@ -33,6 +33,7 @@
     </developers>
     <properties>
         <java.version>1.8</java.version>
+        <cds-reflection.version>0.9.3-SNAPSHOT</cds-reflection.version>
         <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
         <cds-models.version>0.9.3-SNAPSHOT</cds-models.version>
         <jackson.version>2.9.8</jackson.version>
@@ -62,6 +63,11 @@
             <groupId>au.org.consumerdatastandards</groupId>
             <artifactId>cds-codegen-core</artifactId>
             <version>${cds-codegen-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>au.org.consumerdatastandards</groupId>
+            <artifactId>cds-reflection</artifactId>
+            <version>${cds-reflection.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
