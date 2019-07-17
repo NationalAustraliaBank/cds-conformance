@@ -34,7 +34,6 @@
     <properties>
         <java.version>1.8</java.version>
         <cds-reflection.version>0.9.3-SNAPSHOT</cds-reflection.version>
-        <cds-codegen-core.version>0.9.3-SNAPSHOT</cds-codegen-core.version>
         <cds-models.version>0.9.3-SNAPSHOT</cds-models.version>
         <jackson.version>2.9.8</jackson.version>
         <serenity.version>2.0.50</serenity.version>
@@ -58,11 +57,6 @@
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
             <version>3.2.8</version>
-        </dependency>
-        <dependency>
-            <groupId>au.org.consumerdatastandards</groupId>
-            <artifactId>cds-codegen-core</artifactId>
-            <version>${cds-codegen-core.version}</version>
         </dependency>
         <dependency>
             <groupId>au.org.consumerdatastandards</groupId>

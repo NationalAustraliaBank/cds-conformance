@@ -1,6 +1,7 @@
 package au.org.consumerdatastandards.conformance;
 
-import au.org.consumerdatastandards.codegen.model.EndpointModel;
+
+import au.org.consumerdatastandards.support.model.EndpointModel;
 
 public class Payload {
 
