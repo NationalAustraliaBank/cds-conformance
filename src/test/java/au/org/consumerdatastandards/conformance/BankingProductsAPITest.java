@@ -38,13 +38,13 @@ public class BankingProductsAPITest {
             steps.setupApiBasePath(DEFAULT_API_BASE);
         }
     }
-    
+
     @Test
     public void listProducts() {
         steps.listProducts(effective, updatedSince, brand, productCategory, page, pageSize);
         steps.validateListProductsResponseStrict(effective, updatedSince, brand, productCategory, page, pageSize);
         steps.getProductIds();
-    }    
+    }
 
     @Test
     public void listProductsAndGetProductDetail() {
