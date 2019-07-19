@@ -1,6 +1,7 @@
 package au.org.consumerdatastandards.conformance.util;
 
 import au.org.consumerdatastandards.conformance.CglibBeanDeserializerModifier;
+import au.org.consumerdatastandards.conformance.CglibBeanSerializerModifier;
 import au.org.consumerdatastandards.conformance.ConformanceError;
 import au.org.consumerdatastandards.reflection.ReflectionUtil;
 import au.org.consumerdatastandards.support.data.*;
@@ -122,6 +123,7 @@ public class ConformanceUtil {
         return new ObjectMapper().registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module()).registerModule(new JavaTimeModule())
             .registerModule(new SimpleModule().setDeserializerModifier(new CglibBeanDeserializerModifier()))
+            .registerModule(new SimpleModule().setSerializerModifier(new CglibBeanSerializerModifier()))
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     }
