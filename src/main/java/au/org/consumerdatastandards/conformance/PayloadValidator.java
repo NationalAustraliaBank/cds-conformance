@@ -1,11 +1,10 @@
 package au.org.consumerdatastandards.conformance;
 
-import au.org.consumerdatastandards.codegen.ModelBuilder;
-import au.org.consumerdatastandards.codegen.generator.Options;
 import au.org.consumerdatastandards.conformance.util.ConformanceUtil;
 import au.org.consumerdatastandards.conformance.util.ModelConformanceConverter;
 import au.org.consumerdatastandards.support.EndpointResponse;
 import au.org.consumerdatastandards.support.ResponseCode;
+import au.org.consumerdatastandards.support.model.ModelBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -29,7 +28,7 @@ public class PayloadValidator {
     private ConformanceModel conformanceModel;
 
     public PayloadValidator() {
-        ModelBuilder modelBuilder = new ModelBuilder(new Options());
+        ModelBuilder modelBuilder = new ModelBuilder();
         conformanceModel = ModelConformanceConverter.convert(modelBuilder.build());
     }
 

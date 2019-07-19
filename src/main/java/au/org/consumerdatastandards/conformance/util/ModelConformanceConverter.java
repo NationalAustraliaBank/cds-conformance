@@ -1,15 +1,15 @@
 package au.org.consumerdatastandards.conformance.util;
 
-import au.org.consumerdatastandards.codegen.model.APIModel;
-import au.org.consumerdatastandards.codegen.model.EndpointModel;
-import au.org.consumerdatastandards.codegen.model.ParamModel;
-import au.org.consumerdatastandards.codegen.model.SectionModel;
-import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.ConformanceModel;
 import au.org.consumerdatastandards.conformance.Payload;
+import au.org.consumerdatastandards.reflection.ReflectionUtil;
 import au.org.consumerdatastandards.support.EndpointResponse;
 import au.org.consumerdatastandards.support.ResponseCode;
 import au.org.consumerdatastandards.support.data.DataDefinition;
+import au.org.consumerdatastandards.support.model.APIModel;
+import au.org.consumerdatastandards.support.model.EndpointModel;
+import au.org.consumerdatastandards.support.model.ParamModel;
+import au.org.consumerdatastandards.support.model.SectionModel;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.reflect.Array;
@@ -88,7 +88,7 @@ public class ModelConformanceConverter {
                     addPayload(endpointModel, fieldType, payloadMap);
                     processDataDefinition(endpointModel, fieldType, payloadMap, processedClasses);
                 } else if (ReflectionUtil.isSetOrList(fieldType)) {
-                    Class<?> itemType = ReflectionUtil.getItemType(fieldType, field.getGenericType());
+                    Class<?> itemType = ReflectionUtil.getFieldItemType(field);
                     addArrayPayload(endpointModel, itemType, payloadMap);
                     if (itemType.isAnnotationPresent(DataDefinition.class) && !itemType.isEnum()) {
                         addPayload(endpointModel, itemType, payloadMap);

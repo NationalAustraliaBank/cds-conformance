@@ -1,8 +1,8 @@
 package au.org.consumerdatastandards.conformance.util;
 
-import au.org.consumerdatastandards.codegen.util.ReflectionUtil;
 import au.org.consumerdatastandards.conformance.CglibBeanDeserializerModifier;
 import au.org.consumerdatastandards.conformance.ConformanceError;
+import au.org.consumerdatastandards.reflection.ReflectionUtil;
 import au.org.consumerdatastandards.support.data.*;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -258,7 +258,7 @@ public class ConformanceUtil {
         }
     }
 
-    static Class<?> combine(Class<?> primaryClass, Class<?>[] allOf) {
+    private static Class<?> combine(Class<?> primaryClass, Class<?>[] allOf) {
         final BeanGenerator beanGenerator = new BeanGenerator();
         beanGenerator.setNamingPolicy((s, s1, o, predicate) -> primaryClass.getName() + GENERATED_CLASS_SUFFIX);
         addProperties(beanGenerator, primaryClass);
@@ -268,12 +268,8 @@ public class ConformanceUtil {
         return (Class<?>) beanGenerator.createClass();
     }
 
-    private static boolean isCDSModel(Class<?> modelClass) {
-        return modelClass.getName().startsWith("au.org.consumerdatastandards");
-    }
-
     private static boolean allOfExists(Class<?> modelClass) {
-        if (modelClass.isEnum() || !isCDSModel(modelClass)) return false;
+        if (modelClass.isEnum() || !ReflectionUtil.isCDSModel(modelClass)) return false;
         DataDefinition dataDefinition = modelClass.getAnnotation(DataDefinition.class);
         if (dataDefinition != null && dataDefinition.allOf().length > 0) {
             return true;
