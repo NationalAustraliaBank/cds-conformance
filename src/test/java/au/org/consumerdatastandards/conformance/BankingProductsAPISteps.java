@@ -320,17 +320,19 @@ public class BankingProductsAPISteps {
     void getProductDetail(String productId) {
         String url = apiBasePath + "/banking/products/" + productId;
         requestUrl = url;
-        getProductDetailResponse = given().header("Accept", "application/json").when().get(url).then().log().body()
-                .extract().response();
+        getProductDetailResponse = given()
+            .header("Accept", "application/json")
+            .header("x-v", 1)
+            .when().get(url).then().log().body().extract().response();
     }
 
     @Step("Validate /banking/products/{productId} response")
     void validateGetProductDetailResponse(String productId) {
         int statusCode = getProductDetailResponse.statusCode();
         if (!productId.matches(CustomDataType.ASCII.getPattern())) {
-            assertEquals(statusCode, ResponseCode.BAD_REQUEST.getCode());
+            assertEquals(ResponseCode.BAD_REQUEST.getCode(), statusCode);
         } else {
-            assertEquals(statusCode, ResponseCode.OK.getCode());
+            assertEquals(ResponseCode.OK.getCode(), statusCode);
             List<ConformanceError> conformanceErrors = new ArrayList<>();
             String contentType = getProductDetailResponse.contentType();
             if (!"application/json".equals(contentType)) {
