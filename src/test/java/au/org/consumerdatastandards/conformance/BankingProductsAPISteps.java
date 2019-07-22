@@ -106,9 +106,9 @@ public class BankingProductsAPISteps {
         boolean paramsValid = validateListProductsParams(effective, updatedSince, productCategory, page, pageSize);
         int statusCode = listProductsResponse.statusCode();
         if (!paramsValid) {
-            assertEquals(statusCode, ResponseCode.BAD_REQUEST.getCode());
+            assertEquals(ResponseCode.BAD_REQUEST.getCode(), statusCode);
         } else {
-            assertEquals(statusCode, ResponseCode.OK.getCode());
+            assertEquals(ResponseCode.OK.getCode(), statusCode);
             List<ConformanceError> conformanceErrors = new ArrayList<>();
             String contentType = listProductsResponse.contentType();
             if (contentType == null) {
