@@ -34,11 +34,16 @@
         <cds-reflection.version>0.9.3-SNAPSHOT</cds-reflection.version>
         <cds-models.version>0.9.3-SNAPSHOT</cds-models.version>
         <jackson.version>2.9.8</jackson.version>
-        <serenity.version>2.0.50</serenity.version>
+        <serenity.version>2.0.60</serenity.version>
+        <cglib.version>3.2.8</cglib.version>
+        <google-http-client.version>1.30.1</google-http-client.version>
+        <dockerfile-maven-version>1.4.10</dockerfile-maven-version>
+        <docker.skip>true</docker.skip>
+        <compiler.plugin.version>3.7.0</compiler.plugin.version>
+        <surefile.plugin.version>2.22.1</surefile.plugin.version>
+        <failsafe.plugin.version>2.22.1</failsafe.plugin.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-	<dockerfile-maven-version>1.4.10</dockerfile-maven-version>
-	<docker.skip>true</docker.skip>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -54,7 +59,7 @@
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
-            <version>3.2.8</version>
+            <version>${cglib.version}</version>
         </dependency>
         <dependency>
             <groupId>au.org.consumerdatastandards</groupId>
@@ -97,9 +102,14 @@
             <version>${serenity.version}</version>
         </dependency>
         <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-emailer</artifactId>
+            <version>${serenity.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client</artifactId>
-            <version>1.30.1</version>
+            <version>${google-http-client.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -130,7 +140,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>${surefile.plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>true</testFailureIgnore>
                     <skipTests>true</skipTests>
@@ -138,7 +148,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>${failsafe.plugin.version}</version>
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
@@ -159,16 +169,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${compiler.plugin.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
-                <version>2.0.48</version>
+                <version>${serenity.version}</version>
+                <configuration>
+                    <reports>email</reports>
+                </configuration>
                 <executions>
                     <execution>
                         <id>serenity-reports</id>
