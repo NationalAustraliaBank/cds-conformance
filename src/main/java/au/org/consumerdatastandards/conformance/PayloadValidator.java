@@ -141,107 +141,173 @@ public class PayloadValidator {
                 String next = getFieldValueAsString(links, "next");
                 String last = getFieldValueAsString(links, "last");
                 String self = getFieldValueAsString(links, "self");
-                if (StringUtils.isBlank(first) && totalPages != null && totalPages > 0) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("first link data is missing given totalPages %d in meta. See below:\n%s",
-                            totalPages, linksJson))
-                    );
-                } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(first)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("There should be no first link given totalPages %s in meta. See below:\n%s",
-                            totalPages, linksJson))
-                    );
-                } else if (!StringUtils.isBlank(first)) {
-                    Map<String, Object> firstLinkParams = extractParameters(first);
-                    String firstLinkPageParam = getParameter(firstLinkParams, "page");
-                    if (!"1".equals(firstLinkPageParam)) {
-                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .errorMessage(String.format("first link %s does not have page param value as 1. See below:\n%s",
-                                first, linksJson))
-                        );
-                    }
-                    String firstLinkPageSizeParam = getParameter(firstLinkParams, "page-size");
-                    if (!pageSize.toString().equals(firstLinkPageSizeParam)) {
-                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s. See below:\n%s",
-                                first, firstLinkPageSizeParam, pageSize, linksJson))
-                        );
-                    }
-                }
-                if (StringUtils.isBlank(last) && totalPages != null && totalPages > 0) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("last link data is missing given totalPages %d in meta. See below:\n%s",
-                            totalPages, linksJson))
-                    );
-                } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(last)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("There should be no last link given totalPages %s in meta. See below:\n%s",
-                            totalPages, linksJson))
-                    );
-                } else if (!StringUtils.isBlank(last)) {
-                    Map<String, Object> lastLinkParams = extractParameters(last);
-                    String lastLinkPageParam = getParameter(lastLinkParams, "page");
-                    if (StringUtils.isBlank(lastLinkPageParam)) {
-                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .errorMessage(String.format("last link %s does not have page param. See below:\n%s",
-                                last, linksJson))
-                        );
-                    } else {
-                        try {
-                            Integer lastLinkPage = Integer.parseInt(lastLinkPageParam);
-                            if (lastLinkPage < page) {
-                                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .errorMessage(String.format("last link %s have invalid page param %s. See below:\n%s",
-                                        last, lastLinkPage, linksJson))
-                                );
-                            } else if (lastLinkPage.equals(page) && !StringUtils.isBlank(next)) {
-                                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                    .errorMessage(String.format("Next %s should be null as current page is the last page. See below:\n%s",
-                                        next, linksJson))
-                                );
-                            } else if (lastLinkPage > page && StringUtils.isBlank(next)) {
-                                errors.add(new ConformanceError().errorType(ConformanceError.Type.MISSING_VALUE)
-                                    .errorMessage(String.format("Next link should not be null as current page %d is not the last page. See below:\n%s",
-                                        page, linksJson))
-                                );
-                            }
-                        } catch (NumberFormatException e) {
-                            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                                .dataJson(linksJson)
-                                .errorMessage(String.format("last link %s does not have page param", last))
-                            );
-                        }
-                    }
-                    String lastLinkPageSizeParam = getParameter(lastLinkParams, "page-size");
-                    if (!pageSize.toString().equals(lastLinkPageSizeParam)) {
-                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                            .errorMessage(String.format("last link %s page-size param value %s does not match request page-size %s. See below:\n%s",
-                                last, lastLinkPageSizeParam, pageSize, linksJson))
-                        );
-                    }
-                }
-                if (!requestUrl.equals(self)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("Self %s does not match request url %s. See below:\n%s",
-                            self, requestUrl, linksJson))
-                    );
-                }
-                if (page == 1 && !StringUtils.isBlank(prev)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("Prev %s should be null as current page is the first page. See below:\n%s", prev, linksJson))
-                    );
-                } else if (page > 1 && StringUtils.isBlank(prev)) {
-                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("Prev %s should be not null as current page is not the first page. See below:\n%s", prev, linksJson))
-                    );
-                } else if (page > 1 && !StringUtils.isBlank(prev)) {
-                    // TODO validate prev link
-                }
+                checkFirstLink(pageSize, errors, totalPages, linksJson, first);
+                checkLastLink(page, pageSize, errors, totalPages, linksJson, last);
+                checkSelfLink(requestUrl, errors, linksJson, self);
+                checkPrevLink(page, errors, linksJson, prev);
+                checkNextLink(page, errors, totalPages, linksJson, next);
             }
         } else if (isBaseResponse(meta, links)) {
             checkSelfLink(requestUrl, response, errors);
         }
         return errors;
+    }
+
+    private void checkPrevLink(Integer page, List<ConformanceError> errors, String linksJson, String prev) {
+        if (page == 1 && !StringUtils.isBlank(prev)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("Prev %s should be null as current page is the first page. See below:\n%s", prev, linksJson))
+            );
+        } else if (page > 1 && StringUtils.isBlank(prev)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("Prev %s should be not null as current page is not the first page. See below:\n%s", prev, linksJson))
+            );
+        } else if (page > 1 && !StringUtils.isBlank(prev)) {
+            Map<String, Object> prevLinkParams = extractParameters(prev);
+            String prevLinkPageParam = getParameter(prevLinkParams, "page");
+            if (StringUtils.isBlank(prevLinkPageParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("prev link %s does not have page param. See below:\n%s",
+                                prev, linksJson))
+                );
+            } else {
+                try {
+                    int prevLinkPage = Integer.parseInt(prevLinkPageParam);
+                    if (prevLinkPage != page - 1 ) {
+                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                                .errorMessage(String.format("prev link %s have invalid page param %s. See below:\n%s",
+                                        prev, prevLinkPage, linksJson))
+                        );
+                    }
+                } catch (NumberFormatException e) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                            .dataJson(linksJson)
+                            .errorMessage(String.format("prev link %s does not have page param", prev))
+                    );
+                }
+            }
+        }
+    }
+
+    private void checkNextLink(Integer page, List<ConformanceError> errors, Integer totalPages, String linksJson, String next) {
+        if (page.equals(totalPages) && !StringUtils.isBlank(next)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("Next %s should be null as current page is the last page. See below:\n%s", next, linksJson))
+            );
+        } else if (page < totalPages && StringUtils.isBlank(next)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("Next %s should be not null as current page is not the last page. See below:\n%s", next, linksJson))
+            );
+        } else if (page < totalPages && !StringUtils.isBlank(next)) {
+            Map<String, Object> nextLinkParams = extractParameters(next);
+            String nextLinkPageParam = getParameter(nextLinkParams, "page");
+            if (StringUtils.isBlank(nextLinkPageParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("next link %s does not have page param. See below:\n%s",
+                                next, linksJson))
+                );
+            } else {
+                try {
+                    int nextLinkPage = Integer.parseInt(nextLinkPageParam);
+                    if (nextLinkPage != page + 1 ) {
+                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                                .errorMessage(String.format("next link %s have invalid page param %s. See below:\n%s",
+                                        next, nextLinkPage, linksJson))
+                        );
+                    }
+                } catch (NumberFormatException e) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                            .dataJson(linksJson)
+                            .errorMessage(String.format("next link %s does not have page param", next))
+                    );
+                }
+            }
+        }
+    }
+
+
+    private void checkSelfLink(String requestUrl, List<ConformanceError> errors, String linksJson, String self) {
+        if (!requestUrl.equals(self)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("Self %s does not match request url %s. See below:\n%s",
+                    self, requestUrl, linksJson))
+            );
+        }
+    }
+
+    private void checkLastLink(Integer page, Integer pageSize, List<ConformanceError> errors, Integer totalPages, String linksJson, String last) {
+        if (StringUtils.isBlank(last) && totalPages != null && totalPages > 0) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("last link data is missing given totalPages %d in meta. See below:\n%s",
+                    totalPages, linksJson))
+            );
+        } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(last)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("There should be no last link given totalPages %s in meta. See below:\n%s",
+                    totalPages, linksJson))
+            );
+        } else if (!StringUtils.isBlank(last)) {
+            Map<String, Object> lastLinkParams = extractParameters(last);
+            String lastLinkPageParam = getParameter(lastLinkParams, "page");
+            if (StringUtils.isBlank(lastLinkPageParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("last link %s does not have page param. See below:\n%s",
+                        last, linksJson))
+                );
+            } else {
+                try {
+                    Integer lastLinkPage = Integer.parseInt(lastLinkPageParam);
+                    if (lastLinkPage < page) {
+                        errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                            .errorMessage(String.format("last link %s have invalid page param %s. See below:\n%s",
+                                last, lastLinkPage, linksJson))
+                        );
+                    }
+                } catch (NumberFormatException e) {
+                    errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                        .dataJson(linksJson)
+                        .errorMessage(String.format("last link %s does not have page param", last))
+                    );
+                }
+            }
+            String lastLinkPageSizeParam = getParameter(lastLinkParams, "page-size");
+            if (!pageSize.toString().equals(lastLinkPageSizeParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("last link %s page-size param value %s does not match request page-size %s. See below:\n%s",
+                        last, lastLinkPageSizeParam, pageSize, linksJson))
+                );
+            }
+        }
+    }
+
+    private void checkFirstLink(Integer pageSize, List<ConformanceError> errors, Integer totalPages, String linksJson, String first) {
+        if (StringUtils.isBlank(first) && totalPages != null && totalPages > 0) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("first link data is missing given totalPages %d in meta. See below:\n%s",
+                    totalPages, linksJson))
+            );
+        } else if (totalPages != null && totalPages == 0 && !StringUtils.isBlank(first)) {
+            errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                .errorMessage(String.format("There should be no first link given totalPages %s in meta. See below:\n%s",
+                    totalPages, linksJson))
+            );
+        } else if (!StringUtils.isBlank(first)) {
+            Map<String, Object> firstLinkParams = extractParameters(first);
+            String firstLinkPageParam = getParameter(firstLinkParams, "page");
+            if (!"1".equals(firstLinkPageParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("first link %s does not have page param value as 1. See below:\n%s",
+                        first, linksJson))
+                );
+            }
+            String firstLinkPageSizeParam = getParameter(firstLinkParams, "page-size");
+            if (!pageSize.toString().equals(firstLinkPageSizeParam)) {
+                errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
+                    .errorMessage(String.format("first link %s page-size param value %s does not match request page-size %s. See below:\n%s",
+                        first, firstLinkPageSizeParam, pageSize, linksJson))
+                );
+            }
+        }
     }
 
     private boolean isBaseResponse(Object meta, Object links) {

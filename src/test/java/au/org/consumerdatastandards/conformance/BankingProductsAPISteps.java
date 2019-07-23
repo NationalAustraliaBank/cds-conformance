@@ -49,13 +49,13 @@ public class BankingProductsAPISteps {
 
     @Step("Request /banking/products")
     void listProducts(String effective, String updatedSince, String brand, String productCategory, Integer page,
-            Integer pageSize) {
+                      Integer pageSize) {
         String url = apiBasePath + "/banking/products";
         requestUrl = url;
         boolean paramAdded = false;
         RequestSpecification given = given()
-            .header("Accept", "application/json")
-            .header("x-v", 1);
+                .header("Accept", "application/json")
+                .header("x-v", 1);
         if (!StringUtils.isBlank(effective)) {
             given.queryParam("effective", effective);
             requestUrl += "?effective=" + effective;
@@ -89,20 +89,9 @@ public class BankingProductsAPISteps {
         listProductsResponse = given.when().get(url).then().log().all().extract().response();
     }
 
-    @Step("Validate /banking/products response with fuzzy acceptance")
+    @Step("Validate /banking/products response")
     void validateListProductsResponse(String effective, String updatedSince, String brand, String productCategory,
-            Integer page, Integer pageSize) {
-        validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, true);
-    }
-
-    @Step("Validate /banking/products response with strict acceptance verification")
-    void validateListProductsResponseStrict(String effective, String updatedSince, String brand, String productCategory,
-            Integer page, Integer pageSize) {
-        validateListProductsResponse(effective, updatedSince, brand, productCategory, page, pageSize, false);
-    }
-
-    void validateListProductsResponse(String effective, String updatedSince, String brand, String productCategory,
-            Integer page, Integer pageSize, Boolean fuzzyAccept) {
+                                      Integer page, Integer pageSize) {
         boolean paramsValid = validateListProductsParams(effective, updatedSince, productCategory, page, pageSize);
         int statusCode = listProductsResponse.statusCode();
         if (!paramsValid) {
@@ -114,11 +103,9 @@ public class BankingProductsAPISteps {
             if (contentType == null) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage("missing content-type application/json in response header"));
-            } else {
-                if (!contentType.startsWith("application/json")) {
-                    conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
-                            .errorMessage(String.format("invalid content-type of %s specified", contentType)));
-                }
+            } else if (!contentType.startsWith("application/json")) {
+                conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
+                        .errorMessage(String.format("invalid content-type of %s specified", contentType)));
             }
             String json = listProductsResponse.getBody().asString();
             ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
@@ -139,12 +126,8 @@ public class BankingProductsAPISteps {
                     logger.error(error.getDescription());
                 }
 
-                if (!fuzzyAccept) {
-                    assertTrue(
-                            "Conformance errors found in response payload"
-                                    + buildConformanceErrorsDescription(conformanceErrors),
-                            conformanceErrors.isEmpty());
-                }
+                assertTrue("Conformance errors found in response payload"
+                                + buildConformanceErrorsDescription(conformanceErrors), conformanceErrors.isEmpty());
             } catch (IOException e) {
                 fail(e.getMessage());
             }
@@ -152,7 +135,7 @@ public class BankingProductsAPISteps {
     }
 
     private List<ConformanceError> checkDataAgainstCriteria(BankingProduct bankingProduct, String effective,
-            String updatedSince, String brand, String productCategory) {
+                                                            String updatedSince, String brand, String productCategory) {
         List<ConformanceError> errors = new ArrayList<>();
         checkEffectiveDate(bankingProduct, effective, errors);
         checkUpdatedSince(bankingProduct, updatedSince, errors);
@@ -162,7 +145,7 @@ public class BankingProductsAPISteps {
     }
 
     private void checkProductCategory(BankingProduct bankingProduct, String productCategory,
-            List<ConformanceError> errors) {
+                                      List<ConformanceError> errors) {
         if (!StringUtils.isBlank(productCategory)) {
             BankingEnumProductCategory bankingProductCategory = getProductCategory(bankingProduct);
             if (bankingProductCategory == null || !bankingProductCategory.name().equals(productCategory)) {
@@ -264,7 +247,7 @@ public class BankingProductsAPISteps {
     }
 
     private boolean validateListProductsParams(String effective, String updatedSince, String productCategory,
-            Integer page, Integer pageSize) {
+                                               Integer page, Integer pageSize) {
         if (!StringUtils.isBlank(effective)) {
             try {
                 ParamEffective.valueOf(effective);
@@ -298,20 +281,27 @@ public class BankingProductsAPISteps {
         Field dataField = FieldUtils.getField(ResponseBankingProductListData.class, "products", true);
         try {
             return (List<BankingProduct>) ReflectionUtils.getField(dataField, productListData);
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             // Empty responses is ok?
             return new ArrayList<BankingProduct>();
         }
     }
 
     public List<String> getProductIds() {
-        if (responseBankingProductList != null) {
-            List<BankingProduct> products = getProducts(getProductListData(responseBankingProductList));
-            List<String> productIds = new ArrayList<>();
-            for (BankingProduct product : products) {
-                productIds.add(getProductId(product));
+        String json = listProductsResponse.getBody().asString();
+        ObjectMapper objectMapper = ConformanceUtil.createObjectMapper();
+        try {
+            responseBankingProductList = objectMapper.readValue(json, ResponseBankingProductList.class);
+            if (responseBankingProductList != null) {
+                List<BankingProduct> products = getProducts(getProductListData(responseBankingProductList));
+                List<String> productIds = new ArrayList<>();
+                for (BankingProduct product : products) {
+                    productIds.add(getProductId(product));
+                }
+                return productIds;
             }
-            return productIds;
+        } catch (IOException e) {
+            fail(e.getMessage());
         }
         return null;
     }
@@ -321,12 +311,12 @@ public class BankingProductsAPISteps {
         String url = apiBasePath + "/banking/products/" + productId;
         requestUrl = url;
         getProductDetailResponse = given()
-            .header("Accept", "application/json")
-            .header("x-v", 1)
-            .when().get(url).then().log().body().extract().response();
+                .header("Accept", "application/json")
+                .header("x-v", 1)
+                .when().get(url).then().log().body().extract().response();
     }
 
-    @Step("Validate /banking/products/{productId} response")
+    @Step(value = "Validate /banking/products/{productId} response")
     void validateGetProductDetailResponse(String productId) {
         int statusCode = getProductDetailResponse.statusCode();
         if (!productId.matches(CustomDataType.ASCII.getPattern())) {
