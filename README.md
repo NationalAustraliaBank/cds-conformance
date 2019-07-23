@@ -1,4 +1,4 @@
-# cds-conformance
+# cds-conformance [![Build Status](https://travis-ci.com/ConsumerDataStandardsAustralia/cds-conformance.svg?branch=master)](https://travis-ci.com/ConsumerDataStandardsAustralia/cds-conformance)
 
 CDS conformance serves two purposes:
 
