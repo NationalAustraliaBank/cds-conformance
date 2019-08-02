@@ -103,7 +103,7 @@ public class BankingProductsAPISteps {
             if (contentType == null) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage("missing content-type application/json in response header"));
-            } else if (!contentType.startsWith("application/json")) {
+            } else if (!validateContentTypeHeader(contentType)) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage(String.format("invalid content-type of %s specified", contentType)));
             }
@@ -325,7 +325,7 @@ public class BankingProductsAPISteps {
             assertEquals(ResponseCode.OK.getCode(), statusCode);
             List<ConformanceError> conformanceErrors = new ArrayList<>();
             String contentType = getProductDetailResponse.contentType();
-            if (!"application/json".equals(contentType)) {
+            if (!validateContentTypeHeader(contentType)) {
                 conformanceErrors.add(new ConformanceError().errorType(DATA_NOT_MATCHING_CRITERIA)
                         .errorMessage("missing content-type application/json in response header"));
             }
@@ -378,5 +378,9 @@ public class BankingProductsAPISteps {
 
     public ResponseBankingProductList getResponseBankingProductList() {
         return responseBankingProductList;
+    }
+
+    private boolean validateContentTypeHeader(String headerValueString) {
+        return headerValueString.startsWith("application/json");
     }
 }
