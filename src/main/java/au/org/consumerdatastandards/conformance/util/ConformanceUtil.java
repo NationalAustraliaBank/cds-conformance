@@ -19,6 +19,8 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -171,6 +173,19 @@ public class ConformanceUtil {
                 .errorField(modelField)
                 .errorFieldValue(dataFieldValue)
             );
+        }
+        if (CustomDataType.URI.equals(customDataType)) {
+            try {
+                new URI(dataFieldValue.toString());
+            } catch (URISyntaxException e) {
+                errors.add(new ConformanceError()
+                    .errorType(ConformanceError.Type.PATTERN_NOT_MATCHED)
+                    .cdsDataType(cdsDataType)
+                    .dataJson(toJson(data))
+                    .errorField(modelField)
+                    .errorFieldValue(dataFieldValue)
+                );
+            }
         }
     }
 
