@@ -5,7 +5,7 @@
 
 CDS conformance is provided by CDS engineering team under MIT license and it serves two purposes:
 
-1. It provides a basic conformance test against Open Banking API endpoints to the best of CDS engineering team's knowledge. The test can be run with
+1. It's provided as a basic conformance test against Open Banking API endpoints to the best of CDS engineering team's knowledge. The test can be run with
 ```mvn verify -DapiBase=http://localhost/cds-au/v1``` You can replace `http://localhost/cds-au/v1` 
 with any open banking API endpoint.
 
