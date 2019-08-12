@@ -128,9 +128,9 @@ public class PayloadValidator {
                 if (totalRecords != null && totalPages != null
                     && (totalRecords / pageSize + (totalRecords % pageSize > 0 ? 1 : 0)) != totalPages) {
                     errors.add(new ConformanceError().errorType(ConformanceError.Type.DATA_NOT_MATCHING_CRITERIA)
-                        .errorMessage(String.format("totalPages %d does not match totalRecords / page-size + 1, " +
-                                "where page-size is " + pageSize + " . See below:\n%s",
-                            totalPages, ConformanceUtil.toJson(meta)))
+                        .errorMessage(String.format(
+                             "totalPages %d does not match totalRecords / page-size + remainder of (totalRecords / page-size), "
+                             + "where page-size is " + pageSize + " . See below:\n%s", totalPages, ConformanceUtil.toJson(meta)))
                     );
                 }
             }
